@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="Pantailak.LangileakForm"
+      spacing="10"
+      alignment="CENTER">
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <TextField fx:id="txtIzena" promptText="Izena"/>
+    <TextField fx:id="txtAbizena1" promptText="1. Abizena"/>
+    <TextField fx:id="txtAbizena2" promptText="2. Abizena"/>
+    <TextField fx:id="txtTelefonoa" promptText="Telefonoa"/>
+
+    <ComboBox fx:id="comboLanpostu" promptText="Lanpostua"/>
+
+    <CheckBox fx:id="checkErabiltzaile" text="Erabiltzailea du?"/>
+
+    <VBox fx:id="boxErabiltzaile" visible="false" managed="false">
+        <TextField fx:id="txtUser" promptText="Erabiltzailea"/>
+        <PasswordField fx:id="txtPass" promptText="Pasahitza"/>
+    </VBox>
+
+    <HBox spacing="10">
+        <Button text="Gorde" onAction="#onSave"/>
+        <Button text="Utzi" onAction="#onCancel"/>
+    </HBox>
+</VBox>

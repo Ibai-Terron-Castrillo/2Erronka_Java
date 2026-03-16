@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.Cursor?>
+
+<?import javafx.scene.shape.Rectangle?>
+<VBox xmlns="http://javafx.com/javafx/17.0.2"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Pantailak.OsagaiakController"
+      spacing="10"
+      style="-fx-background-color: #f5f7fa;">
+
+    <HBox spacing="15" alignment="CENTER_LEFT"
+          style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #e1e8ed; -fx-border-width: 0 0 1 0;">
+
+        <Button fx:id="atzeraBotoia"
+                prefHeight="40"
+                prefWidth="40"
+                onAction="#atzeraBueltatu"
+                style="-fx-background-color: #4a5568; -fx-background-radius: 20; -fx-cursor: hand;">
+            <graphic>
+                <SVGPath content="M15 19l-7-7 7-7"
+                         style="-fx-stroke: white; -fx-stroke-width: 2; -fx-fill: transparent;" />
+            </graphic>
+            <tooltip>
+                <Tooltip text="Atzera" />
+            </tooltip>
+        </Button>
+
+        <Label text="Osagaiak Kudeaketa"
+               style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+
+        <HBox spacing="10" HBox.hgrow="ALWAYS" alignment="CENTER_RIGHT">
+            <TextField fx:id="searchField"
+                       promptText="Bilatu..."
+                       prefWidth="200"
+                       style="-fx-background-radius: 5; -fx-border-radius: 5;"/>
+
+            <ComboBox fx:id="filterCombo"
+                      prefWidth="120"
+                      style="-fx-background-radius: 5;"/>
+
+            <Button fx:id="refreshButton"
+                    text="🔄 Freskatu"
+                    onAction="#handleRefresh"
+                    style="-fx-background-color: #4299e1; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;"/>
+        </HBox>
+    </HBox>
+
+    <HBox spacing="15" style="-fx-padding: 15;">
+        <VBox spacing="5" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+            <Label text="Osagaiak" style="-fx-text-fill: #718096; -fx-font-size: 14;"/>
+            <Label fx:id="totalOsagaiakLabel" text="0"
+                   style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+            <Label text="Stock gutxi" style="-fx-text-fill: #718096; -fx-font-size: 14;"/>
+            <Label fx:id="stockGutxiLabel" text="0"
+                   style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #e53e3e;"/>
+        </VBox>
+
+        <VBox spacing="5" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+            <Label text="Balioa" style="-fx-text-fill: #718096; -fx-font-size: 14;"/>
+            <Label fx:id="balioTotalaLabel" text="0.00 €"
+                   style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #38a169;"/>
+        </VBox>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS"
+              style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+            <Label text="Stock egoera" style="-fx-text-fill: #718096; -fx-font-size: 14;"/>
+            <ProgressBar fx:id="stockProgressBar" prefWidth="200"/>
+        </VBox>
+
+        <Button text="Txostena"
+                onAction="#handleGenerateReport"
+                style="-fx-background-color: #ed8936; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 10 20;"/>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 15;">
+        <Button fx:id="newButton"
+                text="Berria"
+                onAction="#handleNewOsagaia"
+                style="-fx-background-color: #38a169; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 16;"/>
+
+        <Button fx:id="editButton"
+                text="Gorde"
+                onAction="#handleSaveOsagaia"
+                style="-fx-background-color: #3182ce; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 16;"/>
+
+        <Button fx:id="deleteButton"
+                text="Ezabatu"
+                onAction="#handleDeleteOsagaia"
+                style="-fx-background-color: #e53e3e; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 16;"/>
+
+        <Separator orientation="VERTICAL" prefHeight="25" style="-fx-padding: 0 10;"/>
+
+        <Button fx:id="stockGehituButton"
+                text="Stock +"
+                onAction="#handleAddStock"
+                style="-fx-background-color: #4299e1; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 12;"/>
+
+        <Button fx:id="stockKenduButton"
+                text="Stock -"
+                onAction="#handleRemoveStock"
+                style="-fx-background-color: #ed8936; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 12;"/>
+
+        <Button fx:id="eskatuToggleButton"
+                text="Eskatu"
+                onAction="#handleToggleEskatu"
+                style="-fx-background-color: #805ad5; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 12;"/>
+    </HBox>
+
+    <HBox spacing="15" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
+        <VBox spacing="10" prefWidth="700" HBox.hgrow="ALWAYS">
+            <TableView fx:id="osagaiakTable" VBox.vgrow="ALWAYS"
+                       style="-fx-background-color: white; -fx-background-radius: 5; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+                <columns>
+                    <TableColumn fx:id="idColumn" text="ID" prefWidth="60"/>
+                    <TableColumn fx:id="izenaColumn" text="Izena" prefWidth="250"/>
+                    <TableColumn fx:id="prezioaColumn" text="Prezioa" prefWidth="100"/>
+                    <TableColumn fx:id="stockColumn" text="Stock" prefWidth="80"/>
+                    <TableColumn fx:id="gutxienekoStockColumn" text="Gutxienekoa" prefWidth="100"/>
+                    <TableColumn fx:id="eskatuColumn" text="Eskatzeko" prefWidth="90"/>
+                    <TableColumn fx:id="balioaColumn" text="Balioa" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <VBox spacing="15" prefWidth="300"
+              style="-fx-background-color: white; -fx-background-radius: 5; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+
+            <Label text="Xehetasunak" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+            <GridPane hgap="10" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints halignment="RIGHT" prefWidth="120"/>
+                    <ColumnConstraints halignment="LEFT" prefWidth="150"/>
+                </columnConstraints>
+
+                <Label text="Izena:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="izenaField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Prezioa (€):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="prezioaField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Stock:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <TextField fx:id="stockField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                <Label text="Gutxienekoa:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <TextField fx:id="gutxienekoStockField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                <Label text="Eskatzeko:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <CheckBox fx:id="eskatuCheckBox" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            </GridPane>
+
+            <VBox spacing="8" style="-fx-padding: 10; -fx-background-color: #f7fafc; -fx-border-color: #e2e8f0; -fx-border-width: 1;">
+                <Label text="Stock egoerak:" style="-fx-font-weight: bold;"/>
+                <HBox spacing="5">
+                    <Rectangle width="10" height="10" style="-fx-fill: #e53e3e;"/>
+                    <Label text="Kritikoa" style="-fx-font-size: 12;"/>
+                </HBox>
+                <HBox spacing="5">
+                    <Rectangle width="10" height="10" style="-fx-fill: #ed8936;"/>
+                    <Label text="Abisua" style="-fx-font-size: 12;"/>
+                </HBox>
+                <HBox spacing="5">
+                    <Rectangle width="10" height="10" style="-fx-fill: #38a169;"/>
+                    <Label text="Ongi" style="-fx-font-size: 12;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </HBox>
+</VBox>

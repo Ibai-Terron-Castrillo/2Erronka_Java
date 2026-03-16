@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Pantailak.TxatController"
+            style="-fx-background-color: #F8F9FA;"
+            prefHeight="500.0" prefWidth="600.0">
+
+    <padding>
+        <Insets top="15.0" right="15.0" bottom="15.0" left="15.0" />
+    </padding>
+
+    <top>
+        <VBox spacing="10">
+            <!-- Cabecera con título y usuario -->
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="💬 OSIS Txat"
+                       style="-fx-font-family: 'Segoe UI';
+                              -fx-font-size: 20px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #1D505B;" />
+
+                <HBox spacing="5" HBox.hgrow="ALWAYS" alignment="CENTER_RIGHT">
+                    <Label text="Erabiltzailea:"
+                           style="-fx-font-family: 'Segoe UI';
+                                  -fx-font-size: 12px;
+                                  -fx-text-fill: #7f8c8d;" />
+                    <Label fx:id="lblErabiltzaile"
+                           style="-fx-font-family: 'Segoe UI';
+                                  -fx-font-size: 13px;
+                                  -fx-text-fill: #F3863A;
+                                  -fx-font-weight: bold;"
+                           minWidth="100"/>
+                </HBox>
+            </HBox>
+
+            <!-- Línea separadora -->
+            <HBox style="-fx-border-color: #C19A6B; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 5 0;" />
+
+            <!-- Información de estado -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label fx:id="lblKontaktua"
+                       text="Konektatzen..."
+                       style="-fx-font-family: 'Segoe UI';
+                              -fx-font-size: 11px;
+                              -fx-text-fill: #95a5a6;" />
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="15">
+            <!-- ScrollPane para mensajes estilizados -->
+            <ScrollPane fx:id="scrollPane"
+                        style="-fx-background-color: transparent;
+                             -fx-border-color: #C19A6B;
+                             -fx-border-width: 1;
+                             -fx-border-radius: 5;
+                             -fx-padding: 1;
+                             -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
+                        fitToWidth="true"
+                        VBox.vgrow="ALWAYS">
+
+                <!-- Contenedor VBox para los mensajes -->
+                <VBox fx:id="messagesContainer"
+                      spacing="8"
+                      style="-fx-background-color: #F5F5F5;
+                           -fx-padding: 12;" />
+            </ScrollPane>
+
+            <!-- Panel de entrada -->
+            <VBox spacing="10" style="-fx-padding: 10 0 0 0;">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtInput"
+                               promptText="Idatzi mezua hemen..."
+                               style="-fx-background-color: white;
+                                     -fx-font-family: 'Segoe UI';
+                                     -fx-font-size: 14px;
+                                     -fx-text-fill: #2C3E50;
+                                     -fx-border-color: #1B345D;
+                                     -fx-border-width: 1;
+                                     -fx-border-radius: 4;
+                                     -fx-padding: 10 14 10 14;"
+                               HBox.hgrow="ALWAYS" />
+
+                    <Button fx:id="btnBidali"
+                            text="Bidali"
+                            defaultButton="true"
+                            style="-fx-background-color: #F3863A;
+                                  -fx-text-fill: white;
+                                  -fx-font-family: 'Segoe UI';
+                                  -fx-font-weight: bold;
+                                  -fx-font-size: 14px;
+                                  -fx-background-radius: 4;
+                                  -fx-padding: 10 28 10 28;
+                                  -fx-effect: dropshadow(gaussian, rgba(243, 134, 58, 0.3), 5, 0, 0, 1);"
+                            minWidth="100" />
+                </HBox>
+
+                <!-- Panel de acciones -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Garbitu"
+                            fx:id="btnGarbitu"
+                            style="-fx-background-color: #1D505B;
+                                  -fx-text-fill: white;
+                                  -fx-font-family: 'Segoe UI';
+                                  -fx-font-weight: normal;
+                                  -fx-font-size: 13px;
+                                  -fx-background-radius: 4;
+                                  -fx-padding: 8 20 8 20;
+                                  -fx-effect: dropshadow(gaussian, rgba(29, 80, 91, 0.3), 5, 0, 0, 1);"
+                            minWidth="80" />
+
+                    <Button text="Itxi"
+                            fx:id="btnItxi"
+                            style="-fx-background-color: #5B1C1C;
+                                  -fx-text-fill: white;
+                                  -fx-font-family: 'Segoe UI';
+                                  -fx-font-weight: normal;
+                                  -fx-font-size: 13px;
+                                  -fx-background-radius: 4;
+                                  -fx-padding: 8 20 8 20;
+                                  -fx-effect: dropshadow(gaussian, rgba(91, 28, 28, 0.3), 5, 0, 0, 1);"
+                            minWidth="80" />
+                </HBox>
+            </VBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 15 0 0 0;">
+            <Label text="© 2026 OSIS Suite - Komunikazio Sistema"
+                   style="-fx-font-family: 'Segoe UI';
+                          -fx-font-size: 10px;
+                          -fx-text-fill: #BDC3C7;" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

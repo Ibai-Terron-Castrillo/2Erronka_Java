@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+
+<?import java.lang.String?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="Pantailak.PlaterakController"
+            style="-fx-background-color: #f8fafc;">
+
+    <top>
+        <VBox spacing="0">
+            <HBox spacing="15" alignment="CENTER_LEFT"
+                  style="-fx-background-color: white; -fx-padding: 15 20; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+
+                <Button fx:id="atzeraBotoia" onAction="#atzeraBueltatu"
+                        prefHeight="40"
+                        prefWidth="40"
+                        style="-fx-background-color: #4a5568; -fx-background-radius: 20; -fx-cursor: hand;">
+                    <graphic>
+                        <SVGPath content="M15 19l-7-7 7-7"
+                                 style="-fx-stroke: white; -fx-stroke-width: 2; -fx-fill: transparent;"/>
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Atzera"/>
+                    </tooltip>
+                </Button>
+
+                <Label text="Platerak Kudeaketa"
+                       style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+
+                <Pane HBox.hgrow="ALWAYS"/>
+
+                <HBox spacing="8" alignment="CENTER_RIGHT">
+                    <TextField fx:id="txtBilaketa"
+                               promptText="Bilatu platerra..."
+                               prefWidth="200"
+                               style="-fx-background-radius: 5; -fx-border-radius: 5;"/>
+
+                    <Button text="Stock Gutxi" onAction="#kargatuStockGutxi"
+                            style="-fx-background-color: #f39c12; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;">
+                        <tooltip>
+                            <Tooltip text="Stock gutxi duten platerak ikusi"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.35" style="-fx-padding: 0;">
+            <VBox spacing="10" style="-fx-padding: 15;">
+                <Label text="Platerak"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2d3748; -fx-padding: 0 0 10 0;"/>
+
+                <TableView fx:id="tblPlaterak" VBox.vgrow="ALWAYS"
+                           style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 5;"
+                           onMouseClicked="#onPlaterSelected">
+                    <columns>
+                        <TableColumn text="ID" prefWidth="50">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="id"/>
+                            </cellValueFactory>
+                            <style>
+                                <String fx:value="-fx-alignment: CENTER;"/>
+                            </style>
+                        </TableColumn>
+
+                        <TableColumn text="Izena" prefWidth="180">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="izena"/>
+                            </cellValueFactory>
+                        </TableColumn>
+
+                        <TableColumn text="Prezioa" prefWidth="90">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="prezioa"/>
+                            </cellValueFactory>
+                            <style>
+                                <String fx:value="-fx-alignment: CENTER_RIGHT;"/>
+                            </style>
+                        </TableColumn>
+
+                        <TableColumn text="Stock" prefWidth="70">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="stock"/>
+                            </cellValueFactory>
+                            <style>
+                                <String fx:value="-fx-alignment: CENTER;"/>
+                            </style>
+                        </TableColumn>
+                    </columns>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Plater Berria" onAction="#platerBerriaSortu"
+                            style="-fx-background-color: #38a169; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;">
+                        <tooltip>
+                            <Tooltip text="Plater berria sortu"/>
+                        </tooltip>
+                    </Button>
+
+                    <Button text="Ezabatu" onAction="#ezabatuPlaterra"
+                            style="-fx-background-color: #e53e3e; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;">
+                        <tooltip>
+                            <Tooltip text="Platerra ezabatu"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="15" style="-fx-padding: 15; -fx-background-color: #f8fafc;">
+                <VBox spacing="10"
+                      style="-fx-background-color: white; -fx-padding: 20; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 5;">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Plateraren Datuak"
+                               style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+
+                        <Pane HBox.hgrow="ALWAYS"/>
+
+                        <Label fx:id="lblEditMode" text="PLATER BERRIA"
+                               style="-fx-font-weight: bold; -fx-text-fill: #3182ce;"/>
+                    </HBox>
+
+                    <GridPane hgap="15" vgap="12">
+                        <columnConstraints>
+                            <ColumnConstraints prefWidth="100"/>
+                            <ColumnConstraints prefWidth="200"/>
+                            <ColumnConstraints prefWidth="100"/>
+                            <ColumnConstraints prefWidth="200"/>
+                        </columnConstraints>
+
+                        <Label text="ID:" GridPane.rowIndex="0" GridPane.columnIndex="0"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                        <TextField fx:id="txtId" editable="false" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                                   style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8; -fx-background-color: #f7fafc;"/>
+
+                        <Label text="Izena *:" GridPane.rowIndex="0" GridPane.columnIndex="2"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                        <TextField fx:id="txtIzena" promptText="Sartu plateraren izena" GridPane.rowIndex="0"
+                                   GridPane.columnIndex="3"
+                                   style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;"/>
+
+                        <Label text="Prezioa *:" GridPane.rowIndex="1" GridPane.columnIndex="0"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                        <TextField fx:id="txtPrezioa" promptText="0.00" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                                   style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;"/>
+
+                        <Label text="Stock *:" GridPane.rowIndex="1" GridPane.columnIndex="2"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                        <HBox spacing="8" GridPane.rowIndex="1" GridPane.columnIndex="3">
+                            <TextField fx:id="txtStock" promptText="0" prefWidth="80"
+                                       style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;"/>
+                        </HBox>
+
+                        <Label text="Kategoria *:" GridPane.rowIndex="2" GridPane.columnIndex="0"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                        <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                            <ComboBox fx:id="cmbKategoriak" promptText="Aukeratu kategoria"
+                                      prefWidth="180"
+                                      style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;"/>
+                            <!-- <Button fx:id="btnKategoriaBerria" text="+" onAction="#kategoriaBerriaSortu"
+                                    style="-fx-background-color: #38a169; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 12;">
+                                <tooltip>
+                                    <Tooltip text="Kategoria berria sortu" />
+                                </tooltip>
+                            </Button>-->
+                        </HBox>
+                    </GridPane>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 15 0 0 0;">
+                        <Button text="Garbitu" onAction="#garbituFormularioa"
+                                style="-fx-background-color: #a0aec0; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 20;">
+                            <tooltip>
+                                <Tooltip text="Formularioa garbitu"/>
+                            </tooltip>
+                        </Button>
+
+                        <Button fx:id="btnGorde" text="Gorde Berria" onAction="#gordePlaterra"
+                                style="-fx-background-color: #3182ce; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 20;">
+                            <tooltip>
+                                <Tooltip text="Plater berria gorde"/>
+                            </tooltip>
+                        </Button>
+
+                        <Button fx:id="btnEguneratu" text="Eguneratu" onAction="#eguneratuPlaterra"
+                                style="-fx-background-color: #38a169; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 20;"
+                                visible="false"
+                                managed="false">
+                            <tooltip>
+                                <Tooltip text="Platerra eguneratu"/>
+                            </tooltip>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="10"
+                      style="-fx-background-color: white; -fx-padding: 20; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 5;"
+                      VBox.vgrow="ALWAYS">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Platerraren Osagaiak"
+                               style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+
+                        <Pane HBox.hgrow="ALWAYS"/>
+
+                        <Label fx:id="lblGuztiraKostua" text="Kostu totala: 0.00€"
+                               style="-fx-font-weight: bold; -fx-text-fill: #c0392b;"/>
+                    </HBox>
+
+                    <TableView fx:id="tblOsagaiak" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="ID" prefWidth="50">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="id"/>
+                                </cellValueFactory>
+                                <style>
+                                    <String fx:value="-fx-alignment: CENTER;"/>
+                                </style>
+                            </TableColumn>
+                            <TableColumn text="Izena" prefWidth="200">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="izena"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Kopurua" prefWidth="80">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="kopurua"/>
+                                </cellValueFactory>
+                                <style>
+                                    <String fx:value="-fx-alignment: CENTER;"/>
+                                </style>
+                            </TableColumn>
+                            <TableColumn text="Prezioa" prefWidth="100">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="prezioa"/>
+                                </cellValueFactory>
+                                <style>
+                                    <String fx:value="-fx-alignment: CENTER_RIGHT;"/>
+                                </style>
+                            </TableColumn>
+                            <TableColumn text="Guztira" prefWidth="100">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="guztira"/>
+                                </cellValueFactory>
+                                <style>
+                                    <String fx:value="-fx-alignment: CENTER_RIGHT;"/>
+                                </style>
+                            </TableColumn>
+                        </columns>
+                    </TableView>
+
+                    <VBox spacing="10"
+                          style="-fx-padding: 15; -fx-background-color: #f7fafc; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 5;">
+                        <Label text="Osagai Berria Gehitu"
+                               style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <ComboBox fx:id="cmbOsagaiak" promptText="Aukeratu osagaia"
+                                      prefWidth="250"
+                                      style="-fx-background-radius: 5;"/>
+
+                            <Label text="Kopurua:" style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
+                            <TextField fx:id="txtOsagaiKopurua" promptText="1"
+                                       prefWidth="80"
+                                       style="-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;"/>
+
+                            <Button text="Gehitu" onAction="#gehituOsagaia"
+                                    style="-fx-background-color: #38a169; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;">
+                                <tooltip>
+                                    <Tooltip text="Osagaia gehitu platerari"/>
+                                </tooltip>
+                            </Button>
+
+                            <Pane HBox.hgrow="ALWAYS"/>
+
+                            <Button text="Ezabatu Hautatutakoa" onAction="#ezabatuOsagaia"
+                                    style="-fx-background-color: #e53e3e; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;">
+                                <tooltip>
+                                    <Tooltip text="Hautatutako osagaia ezabatu"/>
+                                </tooltip>
+                            </Button>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="20" alignment="CENTER_LEFT"
+              style="-fx-background-color: white; -fx-padding: 12 20; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
+
+            <VBox spacing="2">
+                <Label text="Plater kopurua" style="-fx-text-fill: #718096; -fx-font-size: 11;"/>
+                <Label fx:id="totalPlaterakLabel" text="0"
+                       style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2d3748;"/>
+            </VBox>
+
+            <Separator orientation="VERTICAL" prefHeight="25"/>
+
+            <VBox spacing="2">
+                <Label text="Stock gutxi" style="-fx-text-fill: #718096; -fx-font-size: 11;"/>
+                <Label fx:id="stockGutxiLabel" text="0"
+                       style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #e53e3e;"/>
+            </VBox>
+
+            <Separator orientation="VERTICAL" prefHeight="25"/>
+
+            <VBox spacing="2">
+                <Label text="Batez besteko prezioa" style="-fx-text-fill: #718096; -fx-font-size: 11;"/>
+                <Label fx:id="batezBestekoLabel" text="0.00€"
+                       style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #3182ce;"/>
+            </VBox>
+
+            <Pane HBox.hgrow="ALWAYS"/>
+
+            <Button text="🔄 Freskatu" onAction="#kargatuPlaterak"
+                    style="-fx-background-color: #4a5568; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 6 12;">
+                <tooltip>
+                    <Tooltip text="Taula berrabiarazi"/>
+                </tooltip>
+            </Button>
+        </HBox>
+    </bottom>
+</BorderPane>
