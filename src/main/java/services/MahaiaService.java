@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class MahaiaService {
-    private final String baseUrl = "http://0.0.0.0:5000/api";
+    private final String baseUrl = "http://0.0.0.0:5093/api";
     private final Gson gson = new GsonBuilder().create();
 
     private static class MahaiaDTO {

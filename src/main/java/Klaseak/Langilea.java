@@ -1,43 +1,57 @@
 package Klaseak;
 
+import java.time.LocalDateTime;
+
 public class Langilea {
     private int id;
-    private String izena;
-    private String abizena1;
-    private String abizena2;
-    private String telefonoa;
-    private Lanpostua lanpostua;
-
-    public Langilea(int id, String izena, String abizena1, String abizena2, String telefonoa, Lanpostua lanpostua) {
-        this.id = id;
-        this.izena = izena;
-        this.abizena1 = abizena1;
-        this.abizena2 = abizena2;
-        this.telefonoa = telefonoa;
-        this.lanpostua = lanpostua;
-    }
+    private String izena;               // izen osoa
+    private String erabiltzailea;       // username
+    private String pasahitza;
+    private String aktibo;               // "Bai" / "Ez"
+    private LocalDateTime erregistroData;
+    private int rolaId;                  // atzerriko gakoa
+    private Rolak rola;                  // erakusteko
 
     public Langilea() {}
 
+    public Langilea(int id, String izena, String erabiltzailea, String pasahitza,
+                    String aktibo, LocalDateTime erregistroData, int rolaId) {
+        this.id = id;
+        this.izena = izena;
+        this.erabiltzailea = erabiltzailea;
+        this.pasahitza = pasahitza;
+        this.aktibo = aktibo;
+        this.erregistroData = erregistroData;
+        this.rolaId = rolaId;
+    }
+
+    // Getters / Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
     public String getIzena() { return izena; }
     public void setIzena(String izena) { this.izena = izena; }
 
-    public String getAbizena1() { return abizena1; }
-    public void setAbizena1(String abizena1) { this.abizena1 = abizena1; }
+    public String getErabiltzailea() { return erabiltzailea; }
+    public void setErabiltzailea(String erabiltzailea) { this.erabiltzailea = erabiltzailea; }
 
-    public String getAbizena2() { return abizena2; }
-    public void setAbizena2(String abizena2) { this.abizena2 = abizena2; }
+    public String getPasahitza() { return pasahitza; }
+    public void setPasahitza(String pasahitza) { this.pasahitza = pasahitza; }
 
-    public String getTelefonoa() { return telefonoa; }
-    public void setTelefonoa(String telefonoa) { this.telefonoa = telefonoa; }
+    public String getAktibo() { return aktibo; }
+    public void setAktibo(String aktibo) { this.aktibo = aktibo; }
 
-    public Klaseak.Lanpostua getLanpostua() { return lanpostua; }
-    public void setLanpostua(Lanpostua value) { this.lanpostua = value; }
+    public LocalDateTime getErregistroData() { return erregistroData; }
+    public void setErregistroData(LocalDateTime erregistroData) { this.erregistroData = erregistroData; }
 
-    public String getLanpostuaName() {
-        return lanpostua != null ? lanpostua.getIzena() : "";
+    public int getRolaId() { return rolaId; }
+    public void setRolaId(int rolaId) { this.rolaId = rolaId; }
+
+    public Rolak getRola() { return rola; }
+    public void setRola(Rolak rola) { this.rola = rola; }
+
+    // Taulan erakusteko
+    public String getRolaIzena() {
+        return rola != null ? rola.getIzena() : "";
     }
 }

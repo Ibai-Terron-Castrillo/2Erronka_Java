@@ -1,16 +1,8 @@
-package Klaseak;
+package dto;
 
-public class Lanpostua {
+public class RolakDto {
     private int id;
     private String izena;
-
-    public Lanpostua(int id, String izena) {
-        this.id = id;
-        this.izena = izena;
-    }
-
-    public Lanpostua() {
-    }
 
     public int getId() {
         return id;
@@ -23,12 +15,6 @@ public class Lanpostua {
     public String getIzena() {
         return izena;
     }
-
-    @Override
-    public String toString() {
-        return izena;
-    }
-
 
     public void setIzena(String izena) {
         this.izena = izena;

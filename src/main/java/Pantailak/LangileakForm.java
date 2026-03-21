@@ -8,26 +8,22 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import Klaseak.Erabiltzailea;
 import Klaseak.Langilea;
-import Klaseak.Lanpostua;
-
-import services.ErabiltzaileaService;
+import Klaseak.Rolak;
 import services.LangileaService;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public class LangileakForm {
 
-    @FXML private TextField txtIzena, txtAbizena1, txtAbizena2, txtTelefonoa;
-    @FXML private ComboBox<Lanpostua> comboLanpostu;
-    @FXML private CheckBox checkErabiltzaile;
-    @FXML private VBox boxErabiltzaile;
-    @FXML private TextField txtUser;
-    @FXML private PasswordField txtPass;
+    @FXML private TextField txtIzena;
+    @FXML private TextField txtErabiltzailea;
+    @FXML private PasswordField txtPasahitza;
+    @FXML private ComboBox<Rolak> comboLanpostu;
 
     private static Langilea editing;
     private static Runnable refreshCallback;
-
-    private Erabiltzailea loadedErabiltzailea;
 
     public static void show(Langilea langile, Runnable onRefresh) {
         try {
@@ -50,107 +46,67 @@ public class LangileakForm {
 
     @FXML
     public void initialize() {
-
-        comboLanpostu.getItems().setAll(LangileaService.getLanpostuak());
-
-        checkErabiltzaile.selectedProperty().addListener((obs, old, val) -> {
-            boxErabiltzaile.setVisible(val);
-            boxErabiltzaile.setManaged(val);
-        });
+        List<Rolak> rolList = LangileaService.getAllRolak();
+        comboLanpostu.setItems(javafx.collections.FXCollections.observableArrayList(rolList));
 
         if (editing != null) {
-
             txtIzena.setText(editing.getIzena());
-            txtAbizena1.setText(editing.getAbizena1());
-            txtAbizena2.setText(editing.getAbizena2());
-            txtTelefonoa.setText(editing.getTelefonoa());
-            comboLanpostu.setValue(editing.getLanpostua());
+            txtErabiltzailea.setText(editing.getErabiltzailea());
+            txtPasahitza.setText(editing.getPasahitza());
 
-            loadedErabiltzailea = ErabiltzaileaService.getByLangile(editing.getId());
-
-            if (loadedErabiltzailea != null) {
-                checkErabiltzaile.setSelected(true);
-                txtUser.setText(loadedErabiltzailea.getIzena());
-                txtPass.setText(loadedErabiltzailea.getPasahitza());
+            if (editing.getRola() != null) {
+                comboLanpostu.setValue(editing.getRola());
+            } else {
+                comboLanpostu.getItems().stream()
+                        .filter(r -> r.getId() == editing.getRolaId())
+                        .findFirst()
+                        .ifPresent(comboLanpostu::setValue);
             }
         }
     }
 
     @FXML
     private void onSave() {
-
         if (txtIzena.getText().isBlank()) {
             showError("Izena jarri behar da.");
             return;
         }
-
-        if (txtTelefonoa.getText().isBlank()) {
-            showError("Telefonoa jarri behar da.");
+        if (txtErabiltzailea.getText().isBlank()) {
+            showError("Erabiltzaile izena jarri behar da.");
+            return;
+        }
+        if (txtPasahitza.getText().isBlank()) {
+            showError("Pasahitza jarri behar da.");
             return;
         }
 
-        String telefono = txtTelefonoa.getText();
-        if (!telefono.matches("\\d{9,}")) {
-            showError("Telefonoak zenbakiak bakarrik izan behar ditu eta gutxienez 9 digitu.");
+        Rolak selectedRol = comboLanpostu.getValue();
+        if (selectedRol == null) {
+            showError("Rol bat aukeratu behar da.");
             return;
         }
 
-        if (comboLanpostu.getValue() == null) {
-            showError("Lanpostu bat aukeratu behar da.");
-            return;
+        Langilea l = (editing == null) ? new Langilea() : editing;
+
+        l.setIzena(txtIzena.getText().trim());
+        l.setErabiltzailea(txtErabiltzailea.getText().trim());
+        l.setPasahitza(txtPasahitza.getText().trim());
+        l.setAktibo("Bai");
+        if (l.getErregistroData() == null) {
+            l.setErregistroData(LocalDateTime.now());
         }
-
-        if (checkErabiltzaile.isSelected()) {
-
-            if (txtUser.getText().isBlank()) {
-                showError("Erabiltzaile izena jarri behar da.");
-                return;
-            }
-
-            if (txtPass.getText().isBlank()) {
-                showError("Pasahitza jarri behar da.");
-                return;
-            }
-        }
-
-        Langilea l = (editing == null ? new Langilea() : editing);
-
-        l.setIzena(txtIzena.getText());
-        l.setAbizena1(txtAbizena1.getText());
-        l.setAbizena2(txtAbizena2.getText());
-        l.setTelefonoa(txtTelefonoa.getText());
-        l.setLanpostua(comboLanpostu.getValue());
+        l.setRolaId(selectedRol.getId());
+        l.setRola(selectedRol);
 
         if (editing == null) {
-            l = LangileaService.create(l);
+            LangileaService.create(l);
         } else {
             LangileaService.update(l);
-        }
-
-        if (checkErabiltzaile.isSelected()) {
-
-            Erabiltzailea er = loadedErabiltzailea;
-
-            if (er == null) {
-                er = new Erabiltzailea();
-                er.setLangilea(l);
-            }
-
-            er.setIzena(txtUser.getText());
-            er.setPasahitza(txtPass.getText());
-
-            ErabiltzaileaService.saveOrUpdate(er);
-
-        } else {
-            if (loadedErabiltzailea != null) {
-                ErabiltzaileaService.delete(loadedErabiltzailea.getId());
-            }
         }
 
         refreshCallback.run();
         close();
     }
-
 
     private void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -158,7 +114,6 @@ public class LangileakForm {
         alert.setContentText(msg);
         alert.showAndWait();
     }
-
 
     @FXML
     private void onCancel() {

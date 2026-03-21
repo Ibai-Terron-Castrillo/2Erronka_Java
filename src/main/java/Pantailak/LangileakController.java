@@ -7,23 +7,20 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import Klaseak.Erabiltzailea;
+
 import Klaseak.Langilea;
-import Klaseak.Lanpostua;
+import Klaseak.Rolak;
 import services.ActionLogger;
-import services.ErabiltzaileaService;
 import services.LangileaService;
 import services.SessionContext;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -34,28 +31,21 @@ public class LangileakController {
     @FXML
     private TableColumn<Langilea, Integer> colId;
     @FXML
-    private TableColumn<Langilea, String> colIzena;
+    private TableColumn<Langilea, String> colIzena;          // izen osoa
     @FXML
-    private TableColumn<Langilea, String> colAbizena1;
+    private TableColumn<Langilea, String> colErabiltzailea;  // username
     @FXML
-    private TableColumn<Langilea, String> colAbizena2;
-    @FXML
-    private TableColumn<Langilea, String> colTelefonoa;
-    @FXML
-    private TableColumn<Langilea, String> colLanpostua;
+    private TableColumn<Langilea, String> colRola;           // rol izena
 
     @FXML
-    private TextField txtIzena, txtAbizena1, txtAbizena2, txtTelefonoa;
+    private TextField txtIzena;          // izen osoa
     @FXML
-    private ComboBox<Lanpostua> comboLanpostu;
+    private TextField txtErabiltzailea;   // username
     @FXML
-    private CheckBox checkErabiltzaile;
+    private PasswordField txtPasahitza;   // password
     @FXML
-    private VBox boxErabiltzaile;
-    @FXML
-    private TextField txtUser;
-    @FXML
-    private PasswordField txtPass;
+    private ComboBox<Rolak> comboLanpostu; // rol aukeratzailea
+
     @FXML
     private Button btnSave, btnCancel;
 
@@ -77,81 +67,58 @@ public class LangileakController {
     private ObservableList<Langilea> langileakLista;
     private FilteredList<Langilea> filteredData;
     private Langilea langileaEditatzen;
-    private Erabiltzailea loadedErabiltzailea;
 
     @FXML
     public void initialize() {
-        System.out.println("initialize() deituta");
+        System.out.println("initialize() deituta (API egokituta)");
 
+        // Taularen zutabeak konfiguratu
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colIzena.setCellValueFactory(new PropertyValueFactory<>("izena"));
-        colAbizena1.setCellValueFactory(new PropertyValueFactory<>("abizena1"));
-        colAbizena2.setCellValueFactory(new PropertyValueFactory<>("abizena2"));
-        colTelefonoa.setCellValueFactory(new PropertyValueFactory<>("telefonoa"));
-        colLanpostua.setCellValueFactory(new PropertyValueFactory<>("lanpostuaName"));
+        colErabiltzailea.setCellValueFactory(new PropertyValueFactory<>("erabiltzailea"));
+        colRola.setCellValueFactory(new PropertyValueFactory<>("rolaIzena"));
 
-        comboLanpostu.getItems().setAll(LangileaService.getLanpostuak());
+        // Rolak kargatu ComboBox-ean
+        List<Rolak> rolList = LangileaService.getAllRolak();
+        comboLanpostu.setItems(FXCollections.observableArrayList(rolList));
+
+        // Filtroen konfigurazioa: dinamikoa rolekin
+        lanpostuFilter.getItems().clear();
+        lanpostuFilter.getItems().add("Guztiak");
+        for (Rolak r : rolList) {
+            lanpostuFilter.getItems().add(r.getIzena());
+        }
+        lanpostuFilter.setValue("Guztiak");
+
+        ordenatuFilter.getItems().addAll("ID", "Izena", "Erabiltzailea", "Lanpostua");
+        ordenatuFilter.setValue("ID");
 
         formularioaKonfiguratu();
-
-        filtroakKonfiguratu();
-
         taulaBirkargatu();
-
         bilaketaKonfiguratu();
-
         botoiakKonfiguratu();
-
         taulaAukera();
-
         formularioaGarbitu();
     }
 
     private void formularioaKonfiguratu() {
-        checkErabiltzaile.selectedProperty().addListener((obs, old, val) -> {
-            boxErabiltzaile.setVisible(val);
-            boxErabiltzaile.setManaged(val);
-        });
-
         btnSave.setOnAction(e -> langileaGorde());
         btnCancel.setOnAction(e -> formularioaGarbitu());
     }
 
-    private void filtroakKonfiguratu() {
-        lanpostuFilter.getItems().addAll("Guztiak", "Sukaldaria", "Zerbitzaria", "Admin");
-        lanpostuFilter.setValue("Guztiak");
-
-        ordenatuFilter.getItems().addAll("ID", "Izena", "Abizena", "Lanpostua");
-        ordenatuFilter.setValue("ID");
-
-        lanpostuFilter.setOnAction(e -> filtroakAplikatu());
-        ordenatuFilter.setOnAction(e -> ordenaAplikatu());
-    }
-
     private void bilaketaKonfiguratu() {
         if (searchField != null) {
-            searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-                filtroakAplikatu();
-            });
+            searchField.textProperty().addListener((observable, oldValue, newValue) -> filtroakAplikatu());
         }
+        lanpostuFilter.setOnAction(e -> filtroakAplikatu());
+        ordenatuFilter.setOnAction(e -> ordenaAplikatu());
     }
 
     private void botoiakKonfiguratu() {
         btnAdd.setOnAction(e -> {
             formularioaGarbitu();
             langileaEditatzen = null;
-            loadedErabiltzailea = null;
         });
-
-        /*
-        btnEdit.setOnAction(e -> {
-            Langilea selected = tableLangileak.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                kargatuFormularioa(selected);
-            } else {
-                mostrarAlerta("Aukeratu langile bat editatzeko.");
-            }
-        });*/
 
         btnDelete.setOnAction(e -> deleteSelected());
 
@@ -171,39 +138,27 @@ public class LangileakController {
 
     private void kargatuFormularioa(Langilea langilea) {
         langileaEditatzen = langilea;
-
         txtIzena.setText(langilea.getIzena());
-        txtAbizena1.setText(langilea.getAbizena1());
-        txtAbizena2.setText(langilea.getAbizena2());
-        txtTelefonoa.setText(langilea.getTelefonoa());
-        comboLanpostu.setValue(langilea.getLanpostua());
+        txtErabiltzailea.setText(langilea.getErabiltzailea());
+        txtPasahitza.setText(langilea.getPasahitza());
 
-        loadedErabiltzailea = ErabiltzaileaService.getByLangile(langilea.getId());
-
-        if (loadedErabiltzailea != null) {
-            checkErabiltzaile.setSelected(true);
-            txtUser.setText(loadedErabiltzailea.getIzena());
-            txtPass.setText(loadedErabiltzailea.getPasahitza());
+        if (langilea.getRola() != null) {
+            comboLanpostu.setValue(langilea.getRola());
         } else {
-            checkErabiltzaile.setSelected(false);
-            txtUser.clear();
-            txtPass.clear();
+            // rolaId-tik bilatu
+            comboLanpostu.getItems().stream()
+                    .filter(r -> r.getId() == langilea.getRolaId())
+                    .findFirst()
+                    .ifPresent(comboLanpostu::setValue);
         }
     }
 
     private void formularioaGarbitu() {
         langileaEditatzen = null;
-        loadedErabiltzailea = null;
-
         txtIzena.clear();
-        txtAbizena1.clear();
-        txtAbizena2.clear();
-        txtTelefonoa.clear();
+        txtErabiltzailea.clear();
+        txtPasahitza.clear();
         comboLanpostu.getSelectionModel().clearSelection();
-        checkErabiltzaile.setSelected(false);
-        txtUser.clear();
-        txtPass.clear();
-
         tableLangileak.getSelectionModel().clearSelection();
     }
 
@@ -212,103 +167,55 @@ public class LangileakController {
             alertaErakutsi("Izena jarri behar da.");
             return;
         }
-
-        if (txtTelefonoa.getText().isBlank()) {
-            alertaErakutsi("Telefonoa jarri behar da.");
+        if (txtErabiltzailea.getText().isBlank()) {
+            alertaErakutsi("Erabiltzaile izena jarri behar da.");
+            return;
+        }
+        if (txtPasahitza.getText().isBlank()) {
+            alertaErakutsi("Pasahitza jarri behar da.");
             return;
         }
 
-        String telefono = txtTelefonoa.getText();
-        if (!telefono.matches("\\d{9,}")) {
-            alertaErakutsi("Telefonoak zenbakiak bakarrik izan behar ditu eta gutxienez 9 digitu.");
+        Rolak selectedRol = comboLanpostu.getValue();
+        if (selectedRol == null) {
+            alertaErakutsi("Rol bat aukeratu behar da.");
             return;
         }
 
-        if (comboLanpostu.getValue() == null) {
-            alertaErakutsi("Lanpostu bat aukeratu behar da.");
-            return;
+        Langilea langilea = (langileaEditatzen == null) ? new Langilea() : langileaEditatzen;
+
+        langilea.setIzena(txtIzena.getText().trim());
+        langilea.setErabiltzailea(txtErabiltzailea.getText().trim());
+        langilea.setPasahitza(txtPasahitza.getText().trim());
+        langilea.setAktibo("Bai");
+        if (langilea.getErregistroData() == null) {
+            langilea.setErregistroData(LocalDateTime.now());
         }
-
-        if (checkErabiltzaile.isSelected()) {
-            if (txtUser.getText().isBlank()) {
-                alertaErakutsi("Erabiltzaile izena jarri behar da.");
-                return;
-            }
-
-            if (txtPass.getText().isBlank()) {
-                alertaErakutsi("Pasahitza jarri behar da.");
-                return;
-            }
-        }
-
-        Langilea langilea = (langileaEditatzen == null ? new Langilea() : langileaEditatzen);
-
-        langilea.setIzena(txtIzena.getText());
-        langilea.setAbizena1(txtAbizena1.getText());
-        langilea.setAbizena2(txtAbizena2.getText());
-        langilea.setTelefonoa(txtTelefonoa.getText());
-        langilea.setLanpostua(comboLanpostu.getValue());
-
-        String izenaLog = txtIzena.getText();
-        String abizenaLog = txtAbizena1.getText();
+        langilea.setRolaId(selectedRol.getId());
+        langilea.setRola(selectedRol);
 
         if (langileaEditatzen == null) {
-            langilea = LangileaService.create(langilea);
-
-            ActionLogger.log(
-                    SessionContext.getCurrentUser(),
-                    "INSERT",
-                    "langileak",
-                    "Langilea sortu: " + izenaLog + " " + abizenaLog
-            );
-
-        } else {
-            LangileaService.update(langilea);
-
-            ActionLogger.log(
-                    SessionContext.getCurrentUser(),
-                    "UPDATE",
-                    "langileak",
-                    "Langilea eguneratu (ID=" + langilea.getId() + ")"
-            );
-        }
-
-
-        if (checkErabiltzaile.isSelected()) {
-            Erabiltzailea erabiltzailea = loadedErabiltzailea;
-
-            if (erabiltzailea == null) {
-                erabiltzailea = new Erabiltzailea();
-                erabiltzailea.setLangilea(langilea);
+            Langilea created = LangileaService.create(langilea);
+            if (created != null) {
+                ActionLogger.log(SessionContext.getCurrentUser(), "INSERT", "langileak",
+                        "Langilea sortu: " + langilea.getIzena());
+            } else {
+                alertaErakutsi("Errorea langilea sortzean.");
+                return;
             }
-
-            erabiltzailea.setIzena(txtUser.getText());
-            erabiltzailea.setPasahitza(txtPass.getText());
-
-            ErabiltzaileaService.saveOrUpdate(erabiltzailea);
-            ActionLogger.log(
-                    erabiltzailea.getIzena(),
-                    loadedErabiltzailea == null ? "INSERT" : "UPDATE",
-                    "erabiltzaileak",
-                    "Erabiltzailea lotu langileari (Langile ID=" + langilea.getId() + ")"
-            );
-
         } else {
-            if (loadedErabiltzailea != null) {
-                ErabiltzaileaService.delete(loadedErabiltzailea.getId());
-                ActionLogger.log(
-                        loadedErabiltzailea.getIzena(),
-                        "DELETE",
-                        "erabiltzaileak",
-                        "Erabiltzailea ezabatua (ID=" + loadedErabiltzailea.getId() + ")"
-                );
-
+            boolean ok = LangileaService.update(langilea);
+            if (ok) {
+                ActionLogger.log(SessionContext.getCurrentUser(), "UPDATE", "langileak",
+                        "Langilea eguneratu (ID=" + langilea.getId() + ")");
+            } else {
+                alertaErakutsi("Errorea langilea eguneratzean.");
+                return;
             }
         }
 
         taulaBirkargatu();
         formularioaGarbitu();
-
         arrakastaErakutsi("Langilea ondo gorde da.");
     }
 
@@ -316,19 +223,17 @@ public class LangileakController {
         if (filteredData == null) return;
 
         String searchText = searchField.getText().toLowerCase();
-        String selectedLangile = lanpostuFilter.getValue();
+        String selectedRolName = lanpostuFilter.getValue();
 
         filteredData.setPredicate(langilea -> {
             boolean matchesSearch = searchText.isEmpty() ||
                     langilea.getIzena().toLowerCase().contains(searchText) ||
-                    langilea.getAbizena1().toLowerCase().contains(searchText) ||
-                    langilea.getAbizena2().toLowerCase().contains(searchText) ||
-                    langilea.getTelefonoa().toLowerCase().contains(searchText);
+                    langilea.getErabiltzailea().toLowerCase().contains(searchText);
 
-            boolean matchesLanpostu = selectedLangile.equals("Guztiak") ||
-                    langilea.getLanpostuaName().equals(selectedLangile);
+            boolean matchesRol = selectedRolName.equals("Guztiak") ||
+                    (langilea.getRola() != null && langilea.getRola().getIzena().equals(selectedRolName));
 
-            return matchesSearch && matchesLanpostu;
+            return matchesSearch && matchesRol;
         });
 
         langileKopuruaLabel.setText(filteredData.size() + " langile");
@@ -338,11 +243,10 @@ public class LangileakController {
         if (filteredData == null) return;
 
         String orden = ordenatuFilter.getValue();
-
         Comparator<Langilea> comparator = switch (orden) {
             case "Izena" -> Comparator.comparing(Langilea::getIzena);
-            case "Abizena" -> Comparator.comparing(Langilea::getAbizena1);
-            case "Lanpostua" -> Comparator.comparing(Langilea::getLanpostuaName);
+            case "Erabiltzailea" -> Comparator.comparing(Langilea::getErabiltzailea);
+            case "Lanpostua" -> Comparator.comparing(l -> l.getRola() != null ? l.getRola().getIzena() : "");
             default -> Comparator.comparing(Langilea::getId);
         };
 
@@ -354,23 +258,11 @@ public class LangileakController {
     private void taulaBirkargatu() {
         try {
             List<Langilea> langileak = LangileaService.getAll();
-
-            if (langileak != null) {
-                langileakLista = FXCollections.observableArrayList(langileak);
-                filteredData = new FilteredList<>(langileakLista);
-
-                ordenaAplikatu();
-
-                System.out.println("Taula birkargatu da " + langileak.size() + " erregistrorekin");
-            } else {
-                langileakLista = FXCollections.observableArrayList();
-                filteredData = new FilteredList<>(langileakLista);
-                tableLangileak.setItems(filteredData);
-                System.err.println("WARNING: LangileaService.getAll() null bueltatu du");
-            }
-
+            langileakLista = FXCollections.observableArrayList(langileak);
+            filteredData = new FilteredList<>(langileakLista);
+            ordenaAplikatu();
             kopuruakEguneratu();
-
+            System.out.println("Taula birkargatu da " + langileak.size() + " erregistrorekin");
         } catch (Exception e) {
             e.printStackTrace();
             langileakLista = FXCollections.observableArrayList();
@@ -387,15 +279,11 @@ public class LangileakController {
         int zerbitzariak = 0;
         int admin = 0;
 
-        for (Langilea langilea : langileakLista) {
-            String lanpostu = langilea.getLanpostuaName();
-            if (lanpostu.contains("Sukaldari") || lanpostu.contains("sukaldari")) {
-                sukaldariak++;
-            } else if (lanpostu.contains("Zerbitzari") || lanpostu.contains("zerbitzari")) {
-                zerbitzariak++;
-            } else if (lanpostu.contains("Admin") || lanpostu.contains("admin")) {
-                admin++;
-            }
+        for (Langilea l : langileakLista) {
+            String rol = l.getRolaIzena().toLowerCase();
+            if (rol.contains("sukaldari")) sukaldariak++;
+            else if (rol.contains("zerbitzari")) zerbitzariak++;
+            else if (rol.contains("admin")) admin++;
         }
 
         totalLangileakLabel.setText(String.valueOf(total));
@@ -415,24 +303,16 @@ public class LangileakController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("KONTUZ!");
         alert.setHeaderText("Ziur zaude erregistro hau ezabatu nahi duzula?");
-        alert.setContentText(selected.getIzena() + " " + selected.getAbizena1() + " betirako ezabatuko da");
+        alert.setContentText(selected.getIzena() + " betirako ezabatuko da");
 
         ButtonType bai = new ButtonType("Bai", ButtonBar.ButtonData.OK_DONE);
         ButtonType ez = new ButtonType("Ez", ButtonBar.ButtonData.CANCEL_CLOSE);
-
         alert.getButtonTypes().setAll(bai, ez);
 
-        var result = alert.showAndWait();
-
-        if (result.isPresent() && result.get() == bai) {
+        if (alert.showAndWait().orElse(ez) == bai) {
             LangileaService.deleteLangile(selected.getId());
-            ActionLogger.log(
-                    SessionContext.getCurrentUser(),
-                    "DELETE",
-                    "langileak",
-                    "Langilea ezabatua: " + selected.getIzena() + " " + selected.getAbizena1()
-            );
-
+            ActionLogger.log(SessionContext.getCurrentUser(), "DELETE", "langileak",
+                    "Langilea ezabatua: " + selected.getIzena());
             taulaBirkargatu();
             formularioaGarbitu();
         }
@@ -458,17 +338,9 @@ public class LangileakController {
     public void atzeraBueltatu(ActionEvent actionEvent) {
         try {
             Stage currentStage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
-
-            StageManager.switchStage(
-                    currentStage,
-                    "menu-view.fxml",
-                    "Menu Nagusia",
-                    true
-            );
-
+            StageManager.switchStage(currentStage, "menu-view.fxml", "Menu Nagusia", true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }

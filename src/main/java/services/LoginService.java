@@ -9,7 +9,7 @@ public class LoginService {
     public static String login(String erabiltzailea, String pasahitza) {
 
         try {
-            URL url = new URL("http://0.0.0.0:5000/api/login/admin");
+            URL url = new URL("http://0.0.0.0:5093/api/login/admin");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setRequestMethod("POST");
