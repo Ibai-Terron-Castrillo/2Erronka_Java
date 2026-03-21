@@ -197,7 +197,7 @@ public class LangileakController {
         if (langileaEditatzen == null) {
             Langilea created = LangileaService.create(langilea);
             if (created != null) {
-                ActionLogger.log(SessionContext.getCurrentUser(), "INSERT", "langileak",
+                ActionLogger.log(SessionContext.getCurrentUsername(), "INSERT", "langileak",
                         "Langilea sortu: " + langilea.getIzena());
             } else {
                 alertaErakutsi("Errorea langilea sortzean.");
@@ -206,7 +206,7 @@ public class LangileakController {
         } else {
             boolean ok = LangileaService.update(langilea);
             if (ok) {
-                ActionLogger.log(SessionContext.getCurrentUser(), "UPDATE", "langileak",
+                ActionLogger.log(SessionContext.getCurrentUsername(), "UPDATE", "langileak",
                         "Langilea eguneratu (ID=" + langilea.getId() + ")");
             } else {
                 alertaErakutsi("Errorea langilea eguneratzean.");
@@ -311,7 +311,7 @@ public class LangileakController {
 
         if (alert.showAndWait().orElse(ez) == bai) {
             LangileaService.deleteLangile(selected.getId());
-            ActionLogger.log(SessionContext.getCurrentUser(), "DELETE", "langileak",
+            ActionLogger.log(SessionContext.getCurrentUsername(), "DELETE", "langileak",
                     "Langilea ezabatua: " + selected.getIzena());
             taulaBirkargatu();
             formularioaGarbitu();

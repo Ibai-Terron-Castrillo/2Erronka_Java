@@ -245,7 +245,7 @@ public class PlaterakController {
                             Platform.runLater(() -> {
                                 if (arrakasta) {
                                     ActionLogger.log(
-                                            SessionContext.getCurrentUser(),
+                                            SessionContext.getCurrentUsername(),
                                             "UPDATE",
                                             "platerak",
                                             "Stock aldaketa: " + platerEditatzen.getIzena() +
@@ -501,7 +501,7 @@ public class PlaterakController {
                             Platform.runLater(() -> {
                                 if (kategoriaSortua != null) {
                                     ActionLogger.log(
-                                            SessionContext.getCurrentUser(),
+                                            SessionContext.getCurrentUsername(),
                                             "INSERT",
                                             "kategoriak",
                                             "Kategoria sortu: " + kategoriaSortua.getIzena()
@@ -558,7 +558,7 @@ public class PlaterakController {
                         Platform.runLater(() -> {
                             if (gordetakoPlater != null) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "INSERT",
                                         "platerak",
                                         "Platerra sortu: " + gordetakoPlater.getIzena() +
@@ -643,7 +643,7 @@ public class PlaterakController {
                         Platform.runLater(() -> {
                             if (arrakasta) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "UPDATE",
                                         "platerak",
                                         "Platerra eguneratu: ID=" + platerEditatzen.getId() +
@@ -708,7 +708,7 @@ public class PlaterakController {
                         Platform.runLater(() -> {
                             if (arrakasta) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "DELETE",
                                         "platerak",
                                         "Platerra ezabatuta: " + hautatuta.getIzena() +
@@ -769,7 +769,7 @@ public class PlaterakController {
 
             platerOsagaiakList.add(osagaiaBerria);
             ActionLogger.log(
-                    SessionContext.getCurrentUser(),
+                    SessionContext.getCurrentUsername(),
                     "INSERT",
                     "platera_osagaiak",
                     "Osagaia gehitua: " + hautatutakoOsagaia.getIzena() +
@@ -792,7 +792,7 @@ public class PlaterakController {
         OsagaiakTableModel hautatutakoOsagaia = tblOsagaiak.getSelectionModel().getSelectedItem();
         if (hautatutakoOsagaia != null) {
             ActionLogger.log(
-                    SessionContext.getCurrentUser(),
+                    SessionContext.getCurrentUsername(),
                     "DELETE",
                     "platera_osagaiak",
                     "Osagaia kenduta: " + hautatutakoOsagaia.getIzena() +

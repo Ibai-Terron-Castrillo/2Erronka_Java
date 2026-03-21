@@ -364,7 +364,7 @@ public class MahaiakController {
                         Platform.runLater(() -> {
                             if (gordetakoMahaia != null) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "INSERT",
                                         "mahaiak",
                                         "Mahaia sortu: Zenbakia=" + gordetakoMahaia.getZenbakia() +
@@ -416,7 +416,7 @@ public class MahaiakController {
                         Platform.runLater(() -> {
                             if (arrakasta) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "UPDATE",
                                         "mahaiak",
                                         "Mahaia eguneratu (ID=" + mahaiEditatzen.getId() +
@@ -481,7 +481,7 @@ public class MahaiakController {
 
                             if (arrakasta) {
                                 ActionLogger.log(
-                                        SessionContext.getCurrentUser(),
+                                        SessionContext.getCurrentUsername(),
                                         "DELETE",
                                         "mahaiak",
                                         "Mahaia ezabatu (ID=" + mahai.getId() +
@@ -517,7 +517,7 @@ public class MahaiakController {
                     .exceptionally(ex -> {
                         Platform.runLater(() -> {
                             ActionLogger.log(
-                                    SessionContext.getCurrentUser(),
+                                    SessionContext.getCurrentUsername(),
                                     "ERROR",
                                     "mahaiak",
                                     "Errorea mahaia ezabatzean (ID=" + mahai.getId() + "): " + ex.getMessage()

@@ -112,7 +112,7 @@ public class LangileaService {
         }
         l.setRolaId(dto.getRolaId());
 
-        if (dto.getRolaId() != null && rolaks != null) {
+        if (rolaks != null) {
             rolaks.stream()
                     .filter(r -> r.getId() == dto.getRolaId())
                     .findFirst()
@@ -144,7 +144,7 @@ public class LangileaService {
         private String pasahitza;
         private String aktibo;
         private String erregistroData;
-        private Integer rolaId;
+        private int rolaId;
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
@@ -158,8 +158,8 @@ public class LangileaService {
         public void setAktibo(String aktibo) { this.aktibo = aktibo; }
         public String getErregistroData() { return erregistroData; }
         public void setErregistroData(String erregistroData) { this.erregistroData = erregistroData; }
-        public Integer getRolaId() { return rolaId; }
-        public void setRolaId(Integer rolaId) { this.rolaId = rolaId; }
+        public int getRolaId() { return rolaId; }
+        public void setRolaId(int rolaId) { this.rolaId = rolaId; }
     }
 
     private static class RolakDto {

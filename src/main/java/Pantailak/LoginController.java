@@ -4,8 +4,10 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import Klaseak.Langilea;
 import services.LoginService;
 import services.SessionContext;
+
 import java.io.IOException;
 
 public class LoginController {
@@ -25,18 +27,18 @@ public class LoginController {
             return;
         }
 
-        String result = LoginService.login(user, pass);
+        Langilea loggedUser = LoginService.login(user, pass);
 
-        if ("OK".equals(result)) {
-            SessionContext.setCurrentUser(user);
+        if (loggedUser != null) {
+            SessionContext.setCurrentUser(loggedUser);
             StageManager.hideFloatingChatButton();
 
             Platform.runLater(() -> {
-                StageManager.showFloatingChatButton(user);
+                StageManager.showFloatingChatButton(loggedUser.getErabiltzailea()); // izena pasatu
                 menuNagusiaIreki();
             });
         } else {
-            erroreaErakutsi("Login errorea: " + result);
+            erroreaErakutsi("Login errorea: erabiltzailea edo pasahitza okerra.");
         }
     }
 
@@ -81,7 +83,7 @@ public class LoginController {
     @FXML
     protected void irten() {
         StageManager.hideFloatingChatButton();
-        SessionContext.clear();
+        SessionContext.logout();
         Platform.exit();
         System.exit(0);
     }

@@ -257,7 +257,7 @@ public class OsagaiakController {
                 javafx.application.Platform.runLater(() -> {
                     if (success) {
                         ActionLogger.log(
-                                SessionContext.getCurrentUser(),
+                                SessionContext.getCurrentUsername(),
                                 isUpdate ? "UPDATE" : "INSERT",
                                 "osagaiak",
                                 (isUpdate
@@ -302,7 +302,7 @@ public class OsagaiakController {
                 javafx.application.Platform.runLater(() -> {
                     if (success) {
                         ActionLogger.log(
-                                SessionContext.getCurrentUser(),
+                                SessionContext.getCurrentUsername(),
                                 "DELETE",
                                 "osagaiak",
                                 "Osagaia ezabatua: " + izenaLog + " (ID=" + idLog + ")"
@@ -337,7 +337,7 @@ public class OsagaiakController {
                     javafx.application.Platform.runLater(() -> {
                         if (success) {
                             ActionLogger.log(
-                                    SessionContext.getCurrentUser(),
+                                    SessionContext.getCurrentUsername(),
                                     "UPDATE",
                                     "osagaiak",
                                     "Stock gehitua: " + selected.getIzena() + " +" + kopurua
@@ -374,7 +374,7 @@ public class OsagaiakController {
                     javafx.application.Platform.runLater(() -> {
                         if (success) {
                             ActionLogger.log(
-                                    SessionContext.getCurrentUser(),
+                                    SessionContext.getCurrentUsername(),
                                     "UPDATE",
                                     "osagaiak",
                                     "Stock kendua: " + selected.getIzena() + " " + kopurua
@@ -405,7 +405,7 @@ public class OsagaiakController {
             javafx.application.Platform.runLater(() -> {
                 if (success) {
                     ActionLogger.log(
-                            SessionContext.getCurrentUser(),
+                            SessionContext.getCurrentUsername(),
                             "UPDATE",
                             "osagaiak",
                             "Eskatu egoera aldatu: " + selected.getIzena()

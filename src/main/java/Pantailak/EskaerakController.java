@@ -550,7 +550,7 @@ public class EskaerakController {
                                         if (finalAllAdded) {
                                             String mezua = "Eskaera ondo sortu da!";
                                             ActionLogger.log(
-                                                    SessionContext.getCurrentUser(),
+                                                    SessionContext.getCurrentUsername(),
                                                     "INSERT",
                                                     "eskaerak",
                                                     "Eskaera sortu: #" + eskaeraZenbakia + " | Guztira: " + decimalFormat.format(guztira) + " €"
@@ -621,7 +621,7 @@ public class EskaerakController {
                         if (pdfFitxategia != null && pdfFitxategia.exists()) {
 
                             ActionLogger.log(
-                                    SessionContext.getCurrentUser(),
+                                    SessionContext.getCurrentUsername(),
                                     "PDF",
                                     "eskaerak",
                                     "PDF sortua eskaerarentzat: #" + eskaera.getEskaeraZenbakia()
@@ -735,7 +735,7 @@ public class EskaerakController {
 
                 if (success) {
                     ActionLogger.log(
-                            SessionContext.getCurrentUser(),
+                            SessionContext.getCurrentUsername(),
                             "UPDATE",
                             "eskaerak",
                             "Eskaera bukatu: #" + eskaera.getEskaeraZenbakia()
@@ -786,7 +786,7 @@ public class EskaerakController {
                 Platform.runLater(() -> {
                     if (success) {
                         ActionLogger.log(
-                                SessionContext.getCurrentUser(),
+                                SessionContext.getCurrentUsername(),
                                 "DELETE",
                                 "eskaerak",
                                 "Eskaera ezabatuta: #" + selected.getEskaeraZenbakia()

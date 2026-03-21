@@ -388,7 +388,7 @@ public class HornitzaileakController {
             }
 
             if (success) {
-                String erabiltzailea = SessionContext.getCurrentUser();
+                String erabiltzailea = SessionContext.getCurrentUsername();
 
                 if (hornitzaileaEditatzen == null) {
                     ActionLogger.log(
@@ -574,7 +574,7 @@ public class HornitzaileakController {
                 boolean success = hornitzaileaService.deleteHornitzailea(selected.getId());
                 if (success) {
                     ActionLogger.log(
-                            SessionContext.getCurrentUser(),
+                            SessionContext.getCurrentUsername(),
                             "DELETE",
                             "hornitzaileak",
                             "Hornitzailea ezabatuta: " + selected.getIzena() + " (ID=" + selected.getId() + ")"
@@ -611,7 +611,7 @@ public class HornitzaileakController {
 
             if (success) {
                 ActionLogger.log(
-                        SessionContext.getCurrentUser(),
+                        SessionContext.getCurrentUsername(),
                         "INSERT",
                         "hornitzailea_osagaiak",
                         "Osagaia gehituta: " + osagaia.getIzena() +
@@ -661,7 +661,7 @@ public class HornitzaileakController {
 
                 if (success) {
                     ActionLogger.log(
-                            SessionContext.getCurrentUser() ,
+                            SessionContext.getCurrentUsername() ,
                             "DELETE",
                             "hornitzailea_osagaiak",
                             "Osagaia kenduta: " + osagaia.getIzena() +
