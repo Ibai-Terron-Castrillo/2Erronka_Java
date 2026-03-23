@@ -4,47 +4,44 @@ import javafx.beans.property.*;
 import com.google.gson.annotations.SerializedName;
 
 public class Mahaia {
-    @SerializedName("id")
     private final IntegerProperty id = new SimpleIntegerProperty();
-
-    @SerializedName("zenbakia")
-    private final IntegerProperty zenbakia = new SimpleIntegerProperty();
-
-    @SerializedName("pertsonaMax")
-    private final IntegerProperty pertsonaMax = new SimpleIntegerProperty();
-
-    @SerializedName("occupied")  // Esto asegura que Gson mapee "occupied" del JSON
-    private final BooleanProperty occupied = new SimpleBooleanProperty();
+    private final IntegerProperty mahaiaZbk = new SimpleIntegerProperty();   // mahai zenbakia
+    private final IntegerProperty edukiera = new SimpleIntegerProperty();    // pertsona max
+    private final StringProperty egoera = new SimpleStringProperty();        // "Libre" / "Okupatuta"
 
     public Mahaia() {}
 
-    public Mahaia(int id, int zenbakia, int pertsonaMax, boolean occupied) {
+    public Mahaia(int id, int mahaiaZbk, int edukiera, String egoera) {
         this.id.set(id);
-        this.zenbakia.set(zenbakia);
-        this.pertsonaMax.set(pertsonaMax);
-        this.occupied.set(occupied);
+        this.mahaiaZbk.set(mahaiaZbk);
+        this.edukiera.set(edukiera);
+        this.egoera.set(egoera);
     }
 
     // Properties
     public IntegerProperty idProperty() { return id; }
-    public IntegerProperty zenbakiaProperty() { return zenbakia; }
-    public IntegerProperty pertsonaMaxProperty() { return pertsonaMax; }
-    public BooleanProperty occupiedProperty() { return occupied; }
+    public IntegerProperty mahaiaZbkProperty() { return mahaiaZbk; }
+    public IntegerProperty edukieraProperty() { return edukiera; }
+    public StringProperty egoeraProperty() { return egoera; }
 
     // Getters
     public int getId() { return id.get(); }
-    public int getZenbakia() { return zenbakia.get(); }
-    public int getPertsonaMax() { return pertsonaMax.get(); }
-    public boolean isOccupied() { return occupied.get(); }
+    public int getMahaiaZbk() { return mahaiaZbk.get(); }
+    public int getEdukiera() { return edukiera.get(); }
+    public String getEgoera() { return egoera.get(); }
 
     // Setters
     public void setId(int id) { this.id.set(id); }
-    public void setZenbakia(int zenbakia) { this.zenbakia.set(zenbakia); }
-    public void setPertsonaMax(int pertsonaMax) { this.pertsonaMax.set(pertsonaMax); }
-    public void setOccupied(boolean occupied) { this.occupied.set(occupied); }
+    public void setMahaiaZbk(int mahaiaZbk) { this.mahaiaZbk.set(mahaiaZbk); }
+    public void setEdukiera(int edukiera) { this.edukiera.set(edukiera); }
+    public void setEgoera(String egoera) { this.egoera.set(egoera); }
+
+    public boolean isOkupatuta() {
+        return "Okupatuta".equals(egoera.get());
+    }
 
     @Override
     public String toString() {
-        return "Mahai " + zenbakia.get() + " (ID: " + id.get() + ", Occupied: " + occupied.get() + ")";
+        return "Mahai " + mahaiaZbk.get() + " (ID: " + id.get() + ", Egoera: " + egoera.get() + ")";
     }
 }

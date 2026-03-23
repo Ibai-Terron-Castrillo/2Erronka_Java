@@ -2,21 +2,13 @@ package Pantailak;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import services.ActionLogger;
-import services.OsagaiaService;
-import Klaseak.Osagaia;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
+import Klaseak.Osagaia;
+import services.ActionLogger;
+import services.OsagaiaService;
 import services.SessionContext;
 
 import java.io.IOException;
@@ -27,11 +19,11 @@ public class OsagaiakController {
     @FXML private TableView<Osagaia> osagaiakTable;
     @FXML private TableColumn<Osagaia, Integer> idColumn;
     @FXML private TableColumn<Osagaia, String> izenaColumn;
-    @FXML private TableColumn<Osagaia, Double> prezioaColumn;
-    @FXML private TableColumn<Osagaia, Integer> stockColumn;
-    @FXML private TableColumn<Osagaia, Integer> gutxienekoStockColumn;
+    @FXML private TableColumn<Osagaia, String> deskribapenaColumn;
+    @FXML private TableColumn<Osagaia, Integer> kantitateaColumn;
+    @FXML private TableColumn<Osagaia, String> neurriaColumn;
+    @FXML private TableColumn<Osagaia, Integer> stockMinimoaColumn;
     @FXML private TableColumn<Osagaia, Boolean> eskatuColumn;
-    @FXML private TableColumn<Osagaia, Double> balioaColumn;
 
     @FXML private TextField searchField;
     @FXML private ComboBox<String> filterCombo;
@@ -39,18 +31,18 @@ public class OsagaiakController {
     @FXML private Button stockGehituButton, stockKenduButton, eskatuToggleButton;
 
     @FXML private TextField izenaField;
-    @FXML private TextField prezioaField;
-    @FXML private TextField stockField;
-    @FXML private TextField gutxienekoStockField;
-    @FXML private CheckBox eskatuCheckBox;
+    @FXML private TextArea deskribapenaArea; // deskribapena eremu gehigarria
+    @FXML private TextField kantitateaField;
+    @FXML private TextField neurriaField;
+    @FXML private TextField stockMinimoaField;
+    // @FXML private CheckBox eskatuCheckBox; // kendu (ez dago APIan)
 
     @FXML private Label totalOsagaiakLabel;
     @FXML private Label stockGutxiLabel;
-    @FXML private Label balioTotalaLabel;
     @FXML private ProgressBar stockProgressBar;
 
-    private final ObservableList<Osagaia> osagaiakList = FXCollections.observableArrayList();
-    private final FilteredList<Osagaia> filteredData = new FilteredList<>(osagaiakList);
+    private final javafx.collections.ObservableList<Osagaia> osagaiakList = javafx.collections.FXCollections.observableArrayList();
+    private final javafx.collections.transformation.FilteredList<Osagaia> filteredData = new javafx.collections.transformation.FilteredList<>(osagaiakList);
 
     @FXML
     public void initialize() {
@@ -64,42 +56,19 @@ public class OsagaiakController {
     private void setupTable() {
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         izenaColumn.setCellValueFactory(new PropertyValueFactory<>("izena"));
-        prezioaColumn.setCellValueFactory(new PropertyValueFactory<>("azkenPrezioa"));
-        stockColumn.setCellValueFactory(new PropertyValueFactory<>("stock"));
-        gutxienekoStockColumn.setCellValueFactory(new PropertyValueFactory<>("gutxienekoStock"));
-        eskatuColumn.setCellValueFactory(new PropertyValueFactory<>("eskatu"));
+        deskribapenaColumn.setCellValueFactory(new PropertyValueFactory<>("deskribapena"));
+        kantitateaColumn.setCellValueFactory(new PropertyValueFactory<>("kantitatea"));
+        neurriaColumn.setCellValueFactory(new PropertyValueFactory<>("neurriaUnitatea"));
+        stockMinimoaColumn.setCellValueFactory(new PropertyValueFactory<>("stockMinimoa"));
 
-        balioaColumn.setCellValueFactory(cellData ->
-                new javafx.beans.property.SimpleDoubleProperty(
-                        cellData.getValue().stockBalioaLortu()
-                ).asObject()
-        );
-
-        prezioaColumn.setCellFactory(column -> new TableCell<Osagaia, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%.2f €", item));
-                }
-            }
+        // eskatu zutabea (erosiBeharDa erabiliz)
+        eskatuColumn.setCellValueFactory(cellData -> {
+            boolean eskaera = cellData.getValue().erosiBeharDa();
+            return new javafx.beans.property.SimpleBooleanProperty(eskaera);
         });
 
-        balioaColumn.setCellFactory(column -> new TableCell<Osagaia, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%.2f €", item));
-                }
-            }
-        });
-
-        stockColumn.setCellFactory(column -> new TableCell<Osagaia, Integer>() {
+        // Koloreak stock gutxirako
+        kantitateaColumn.setCellFactory(column -> new TableCell<Osagaia, Integer>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
@@ -111,7 +80,7 @@ public class OsagaiakController {
                     Osagaia osagaia = getTableView().getItems().get(getIndex());
                     if (osagaia.erosiBeharDa()) {
                         setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                    } else if (item <= osagaia.getGutxienekoStock() * 2) {
+                    } else if (item <= osagaia.getStockMinimoa() * 2) {
                         setStyle("-fx-text-fill: orange;");
                     } else {
                         setStyle("-fx-text-fill: green;");
@@ -129,16 +98,12 @@ public class OsagaiakController {
                     setStyle("");
                 } else {
                     setText(item ? "BAI" : "EZ");
-                    if (item) {
-                        setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                    } else {
-                        setStyle("-fx-text-fill: green;");
-                    }
+                    setStyle(item ? "-fx-text-fill: red; -fx-font-weight: bold;" : "-fx-text-fill: green;");
                 }
             }
         });
 
-        SortedList<Osagaia> sortedData = new SortedList<>(filteredData);
+        javafx.collections.transformation.SortedList<Osagaia> sortedData = new javafx.collections.transformation.SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(osagaiakTable.comparatorProperty());
         osagaiakTable.setItems(sortedData);
 
@@ -151,7 +116,7 @@ public class OsagaiakController {
     }
 
     private void setupFilters() {
-        filterCombo.getItems().addAll("Guztiak", "Stock gutxi dutenak", "Eskatzeko markatuta", "Stock normala");
+        filterCombo.getItems().addAll("Guztiak", "Stock gutxi dutenak", "Stock normala");
         filterCombo.setValue("Guztiak");
         filterCombo.valueProperty().addListener((obs, oldVal, newVal) -> applyFilter(newVal));
     }
@@ -159,12 +124,9 @@ public class OsagaiakController {
     private void applyFilter(String filter) {
         filteredData.setPredicate(osagaia -> {
             if (filter == null || filter.isEmpty() || filter.equals("Guztiak")) return true;
-            switch (filter) {
-                case "Stock gutxi dutenak": return osagaia.erosiBeharDa();
-                case "Eskatzeko markatuta": return osagaia.isEskatu();
-                case "Stock normala": return !osagaia.erosiBeharDa();
-                default: return true;
-            }
+            if (filter.equals("Stock gutxi dutenak")) return osagaia.erosiBeharDa();
+            if (filter.equals("Stock normala")) return !osagaia.erosiBeharDa();
+            return true;
         });
     }
 
@@ -181,16 +143,16 @@ public class OsagaiakController {
 
     private void loadOsagaiaDetails(Osagaia osagaia) {
         izenaField.setText(osagaia.getIzena());
-        prezioaField.setText(String.format("%.2f", osagaia.getAzkenPrezioa()));
-        stockField.setText(String.valueOf(osagaia.getStock()));
-        gutxienekoStockField.setText(String.valueOf(osagaia.getGutxienekoStock()));
-        eskatuCheckBox.setSelected(osagaia.isEskatu());
+        deskribapenaArea.setText(osagaia.getDeskribapena());
+        kantitateaField.setText(String.valueOf(osagaia.getKantitatea()));
+        neurriaField.setText(osagaia.getNeurriaUnitatea());
+        stockMinimoaField.setText(String.valueOf(osagaia.getStockMinimoa()));
         updateStockProgress(osagaia);
     }
 
     private void updateStockProgress(Osagaia osagaia) {
-        double progress = osagaia.getGutxienekoStock() > 0 ?
-                Math.min(1.0, (double) osagaia.getStock() / (osagaia.getGutxienekoStock() * 3)) : 0.5;
+        double progress = osagaia.getStockMinimoa() > 0 ?
+                Math.min(1.0, (double) osagaia.getKantitatea() / (osagaia.getStockMinimoa() * 3)) : 0.5;
         stockProgressBar.setProgress(progress);
         if (progress < 0.25) stockProgressBar.setStyle("-fx-accent: red;");
         else if (progress < 0.5) stockProgressBar.setStyle("-fx-accent: orange;");
@@ -204,16 +166,15 @@ public class OsagaiakController {
     private void filterBySearch(String searchText) {
         filteredData.setPredicate(osagaia ->
                 searchText == null || searchText.isEmpty() ||
-                        osagaia.getIzena().toLowerCase().contains(searchText.toLowerCase()));
+                        osagaia.getIzena().toLowerCase().contains(searchText.toLowerCase()) ||
+                        (osagaia.getDeskribapena() != null && osagaia.getDeskribapena().toLowerCase().contains(searchText.toLowerCase())));
     }
 
     private void updateStatistics() {
         int total = osagaiakList.size();
         long stockGutxi = osagaiakList.stream().filter(Osagaia::erosiBeharDa).count();
-        double balioTotala = osagaiakList.stream().mapToDouble(Osagaia::stockBalioaLortu).sum();
         totalOsagaiakLabel.setText(String.valueOf(total));
         stockGutxiLabel.setText(String.valueOf(stockGutxi));
-        balioTotalaLabel.setText(String.format("%.2f €", balioTotala));
     }
 
     @FXML
@@ -224,34 +185,43 @@ public class OsagaiakController {
         try {
             Osagaia selected = osagaiakTable.getSelectionModel().getSelectedItem();
 
-            String prezioaTexto = prezioaField.getText().replace(',', '.');
-            String stockTexto = stockField.getText();
-            String gutxienekoStockTexto = gutxienekoStockField.getText();
+            // Balidazioak
+            if (izenaField.getText().isBlank()) {
+                showAlert("Errorea", "Izena ezin da hutsik egon", Alert.AlertType.ERROR);
+                return;
+            }
+            int kantitatea;
+            int stockMinimoa;
+            try {
+                kantitatea = Integer.parseInt(kantitateaField.getText());
+                stockMinimoa = Integer.parseInt(stockMinimoaField.getText());
+            } catch (NumberFormatException e) {
+                showAlert("Errorea", "Kopurua eta stock minimoa zenbakiak izan behar dira", Alert.AlertType.ERROR);
+                return;
+            }
 
             Osagaia osagaia;
             if (selected != null) {
                 osagaia = selected;
                 osagaia.setIzena(izenaField.getText());
-                osagaia.setAzkenPrezioa(Double.parseDouble(prezioaTexto));
-                osagaia.setStock(Integer.parseInt(stockTexto));
-                osagaia.setGutxienekoStock(Integer.parseInt(gutxienekoStockTexto));
-                osagaia.setEskatu(eskatuCheckBox.isSelected());
+                osagaia.setDeskribapena(deskribapenaArea.getText());
+                osagaia.setKantitatea(kantitatea);
+                osagaia.setNeurriaUnitatea(neurriaField.getText());
+                osagaia.setStockMinimoa(stockMinimoa);
             } else {
                 osagaia = new Osagaia();
                 osagaia.setIzena(izenaField.getText());
-                osagaia.setAzkenPrezioa(Double.parseDouble(prezioaTexto));
-                osagaia.setStock(Integer.parseInt(stockTexto));
-                osagaia.setGutxienekoStock(Integer.parseInt(gutxienekoStockTexto));
-                osagaia.setEskatu(eskatuCheckBox.isSelected());
+                osagaia.setDeskribapena(deskribapenaArea.getText());
+                osagaia.setKantitatea(kantitatea);
+                osagaia.setNeurriaUnitatea(neurriaField.getText());
+                osagaia.setStockMinimoa(stockMinimoa);
             }
 
             boolean isUpdate = selected != null;
             String izenaLog = izenaField.getText();
-            double prezioaLog = Double.parseDouble(prezioaTexto);
-            int stockLog = Integer.parseInt(stockTexto);
 
             new Thread(() -> {
-                boolean success = selected != null ?
+                boolean success = isUpdate ?
                         OsagaiaService.updateOsagaia(osagaia) :
                         OsagaiaService.createOsagaia(osagaia);
                 javafx.application.Platform.runLater(() -> {
@@ -259,27 +229,21 @@ public class OsagaiakController {
                         ActionLogger.log(
                                 SessionContext.getCurrentUsername(),
                                 isUpdate ? "UPDATE" : "INSERT",
-                                "osagaiak",
-                                (isUpdate
-                                        ? "Osagaia eguneratu: "
-                                        : "Osagaia sortu: ")
-                                        + izenaLog
-                                        + " | Prezioa=" + prezioaLog
-                                        + " | Stock=" + stockLog
+                                "inbentarioa",
+                                (isUpdate ? "Eguneratu: " : "Sortu: ") + izenaLog
                         );
-
                         showAlert("Arrakasta", "Osagaia ondo gordeta", Alert.AlertType.INFORMATION);
                         loadOsagaiak();
                         clearForm();
-
                     } else {
                         showAlert("Errorea", "Ezin izan da osagaia gorde", Alert.AlertType.ERROR);
                     }
-
                 });
             }).start();
-        } catch (NumberFormatException e) {
-            showAlert("Errorea", "Zenbakiak sartu behar dira prezio eta stock eremuetarako", Alert.AlertType.ERROR);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Errorea", "Errorea gordetzean: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
@@ -294,7 +258,7 @@ public class OsagaiakController {
         confirm.setTitle("Berrespena");
         confirm.setHeaderText("Osagaia ezabatu");
         confirm.setContentText("Ziur zaude '" + selected.getIzena() + "' osagaia ezabatu nahi duzula?");
-        if (confirm.showAndWait().get() == ButtonType.OK) {
+        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             String izenaLog = selected.getIzena();
             int idLog = selected.getId();
             new Thread(() -> {
@@ -304,8 +268,8 @@ public class OsagaiakController {
                         ActionLogger.log(
                                 SessionContext.getCurrentUsername(),
                                 "DELETE",
-                                "osagaiak",
-                                "Osagaia ezabatua: " + izenaLog + " (ID=" + idLog + ")"
+                                "inbentarioa",
+                                "Ezabatua: " + izenaLog + " (ID=" + idLog + ")"
                         );
                         showAlert("Arrakasta", "Osagaia ondo ezabatuta", Alert.AlertType.INFORMATION);
                         loadOsagaiak();
@@ -333,14 +297,14 @@ public class OsagaiakController {
             try {
                 int kopurua = Integer.parseInt(quantity);
                 new Thread(() -> {
-                    boolean success = OsagaiaService.updateStock(selected.getId(), kopurua);
+                    boolean success = OsagaiaService.updateStock(selected.getId(), selected.getKantitatea() + kopurua);
                     javafx.application.Platform.runLater(() -> {
                         if (success) {
                             ActionLogger.log(
                                     SessionContext.getCurrentUsername(),
                                     "UPDATE",
-                                    "osagaiak",
-                                    "Stock gehitua: " + selected.getIzena() + " +" + kopurua
+                                    "inbentarioa",
+                                    "Stock gehitu: " + selected.getIzena() + " +" + kopurua
                             );
                             loadOsagaiak();
                             showAlert("Arrakasta", "Stock ondo eguneratuta", Alert.AlertType.INFORMATION);
@@ -368,16 +332,21 @@ public class OsagaiakController {
         dialog.setContentText("Sartu kendu nahi duzun kopurua:");
         dialog.showAndWait().ifPresent(quantity -> {
             try {
-                int kopurua = -Integer.parseInt(quantity);
+                int kopurua = Integer.parseInt(quantity);
+                int newStock = selected.getKantitatea() - kopurua;
+                if (newStock < 0) {
+                    showAlert("Errorea", "Ezin da stock negatiboa izan", Alert.AlertType.ERROR);
+                    return;
+                }
                 new Thread(() -> {
-                    boolean success = OsagaiaService.updateStock(selected.getId(), kopurua);
+                    boolean success = OsagaiaService.updateStock(selected.getId(), newStock);
                     javafx.application.Platform.runLater(() -> {
                         if (success) {
                             ActionLogger.log(
                                     SessionContext.getCurrentUsername(),
                                     "UPDATE",
-                                    "osagaiak",
-                                    "Stock kendua: " + selected.getIzena() + " " + kopurua
+                                    "inbentarioa",
+                                    "Stock kendu: " + selected.getIzena() + " -" + kopurua
                             );
                             loadOsagaiak();
                             showAlert("Arrakasta", "Stock ondo eguneratuta", Alert.AlertType.INFORMATION);
@@ -393,68 +362,45 @@ public class OsagaiakController {
     }
 
     @FXML
-    private void handleToggleEskatu() {
-        Osagaia selected = osagaiakTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("Abisua", "Hautatu ezazu eskatu/ez eskatu aldatu nahi diozun osagaia", Alert.AlertType.WARNING);
-            return;
-        }
-
-        new Thread(() -> {
-            boolean success = OsagaiaService.toggleEskatu(selected.getId());
-            javafx.application.Platform.runLater(() -> {
-                if (success) {
-                    ActionLogger.log(
-                            SessionContext.getCurrentUsername(),
-                            "UPDATE",
-                            "osagaiak",
-                            "Eskatu egoera aldatu: " + selected.getIzena()
-                    );
-                    showAlert("Arrakasta", "Eskatu egoera aldatu da", Alert.AlertType.INFORMATION);
-                    loadOsagaiak();
-                } else {
-                    showAlert("Errorea", "Ezin izan da eskatu egoera aldatu", Alert.AlertType.ERROR);
-                }
-            });
-        }).start();
-    }
-
-    @FXML
     private void handleRefresh() { loadOsagaiak(); }
 
     @FXML
     private void handleGenerateReport() {
         StringBuilder report = new StringBuilder();
-        report.append("=== INVENTARIOaren INFORMEA ===\n");
+        report.append("=== INBENTARIOAREN INFORMEA ===\n");
         report.append("Data: ").append(java.time.LocalDate.now()).append("\n");
         report.append("Osagai kopurua: ").append(osagaiakList.size()).append("\n");
         long stockGutxi = osagaiakList.stream().filter(Osagaia::erosiBeharDa).count();
-        report.append("Stock gutxi dutenak: ").append(stockGutxi).append("\n");
-        double balioTotala = osagaiakList.stream().mapToDouble(Osagaia::stockBalioaLortu).sum();
-        report.append("Balio totala: ").append(String.format("%.2f", balioTotala)).append(" €\n\n");
+        report.append("Stock gutxi dutenak: ").append(stockGutxi).append("\n\n");
         report.append("=== OSAGAIAK ZERRENDATUA ===\n");
         for (Osagaia osagaia : osagaiakList) {
-            report.append(String.format("- %s: %d unitate @ %.2f€ = %.2f€ %s\n",
-                    osagaia.getIzena(), osagaia.getStock(), osagaia.getAzkenPrezioa(),
-                    osagaia.stockBalioaLortu(), osagaia.erosiBeharDa() ? "[STOCK GUTXI]" : ""));
+            report.append(String.format("- %s: %d %s (min: %d) %s\n",
+                    osagaia.getIzena(),
+                    osagaia.getKantitatea(),
+                    osagaia.getNeurriaUnitatea() != null ? osagaia.getNeurriaUnitatea() : "",
+                    osagaia.getStockMinimoa(),
+                    osagaia.erosiBeharDa() ? "[STOCK GUTXI]" : ""));
+            if (osagaia.getDeskribapena() != null && !osagaia.getDeskribapena().isBlank()) {
+                report.append("  Deskribapena: ").append(osagaia.getDeskribapena()).append("\n");
+            }
         }
         TextArea textArea = new TextArea(report.toString());
         textArea.setEditable(false);
         textArea.setWrapText(true);
         textArea.setPrefSize(600, 400);
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Inventarioaren Informea");
-        alert.setHeaderText("Osagaien inventarioaren informea");
+        alert.setTitle("Inbentarioaren Informea");
+        alert.setHeaderText("Osagaien inbentarioaren informea");
         alert.getDialogPane().setContent(textArea);
         alert.showAndWait();
     }
 
     private void clearForm() {
         izenaField.clear();
-        prezioaField.clear();
-        stockField.clear();
-        gutxienekoStockField.clear();
-        eskatuCheckBox.setSelected(false);
+        deskribapenaArea.clear();
+        kantitateaField.clear();
+        neurriaField.clear();
+        stockMinimoaField.clear();
         osagaiakTable.getSelectionModel().clearSelection();
         stockProgressBar.setProgress(0);
     }
@@ -470,18 +416,10 @@ public class OsagaiakController {
     @FXML
     public void atzeraBueltatu(ActionEvent actionEvent) {
         try {
-            Stage currentStage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
-
-            StageManager.switchStage(
-                    currentStage,
-                    "menu-view.fxml",
-                    "Menu Nagusia",
-                    true
-            );
-
+            Stage currentStage = (Stage) ((javafx.scene.Node) actionEvent.getSource()).getScene().getWindow();
+            StageManager.switchStage(currentStage, "menu-view.fxml", "Menu Nagusia", true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }

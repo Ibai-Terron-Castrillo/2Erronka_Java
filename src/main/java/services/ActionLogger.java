@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 
 public class ActionLogger {
 
-    private static final String SERVER_IP = "192.168.1.158";
+    private static final String SERVER_IP = "localhost";
     private static final String SERVER_SHARE = "C$\\LOGak";
     private static final String LOG_FILE = "app_actions.log";
 

@@ -1,67 +1,56 @@
 package Klaseak;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Osagaia {
     private int id;
     private String izena;
-    private double azkenPrezioa;
-    private int stock;
-    private int gutxienekoStock;
-    private boolean eskatu;
-    private List<Hornitzailea> hornitzaileak;
+    private String deskribapena;
+    private int kantitatea;          // stock
+    private String neurriaUnitatea;  // kg, l, unitate...
+    private int stockMinimoa;        // gutxieneko stock
+    private LocalDateTime azkenEguneratzea;
 
     public Osagaia() {
-        this.hornitzaileak = new ArrayList<>();
-        this.eskatu = false;
+        this.azkenEguneratzea = LocalDateTime.now();
     }
 
-    public Osagaia(String izena, double azkenPrezioa, int stock, int gutxienekoStock) {
+    public Osagaia(String izena, int kantitatea, int stockMinimoa) {
         this();
         this.izena = izena;
-        this.azkenPrezioa = azkenPrezioa;
-        this.stock = stock;
-        this.gutxienekoStock = gutxienekoStock;
+        this.kantitatea = kantitatea;
+        this.stockMinimoa = stockMinimoa;
     }
 
+    // Getters / Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
     public String getIzena() { return izena; }
     public void setIzena(String izena) { this.izena = izena; }
 
-    public double getAzkenPrezioa() { return azkenPrezioa; }
-    public void setAzkenPrezioa(double azkenPrezioa) { this.azkenPrezioa = azkenPrezioa; }
+    public String getDeskribapena() { return deskribapena; }
+    public void setDeskribapena(String deskribapena) { this.deskribapena = deskribapena; }
 
-    public int getStock() { return stock; }
-    public void setStock(int stock) { this.stock = stock; }
+    public int getKantitatea() { return kantitatea; }
+    public void setKantitatea(int kantitatea) { this.kantitatea = kantitatea; }
 
-    public int getGutxienekoStock() { return gutxienekoStock; }
-    public void setGutxienekoStock(int gutxienekoStock) { this.gutxienekoStock = gutxienekoStock; }
+    public String getNeurriaUnitatea() { return neurriaUnitatea; }
+    public void setNeurriaUnitatea(String neurriaUnitatea) { this.neurriaUnitatea = neurriaUnitatea; }
 
-    public boolean isEskatu() { return eskatu; }
-    public void setEskatu(boolean eskatu) { this.eskatu = eskatu; }
+    public int getStockMinimoa() { return stockMinimoa; }
+    public void setStockMinimoa(int stockMinimoa) { this.stockMinimoa = stockMinimoa; }
 
-    public List<Hornitzailea> getHornitzaileak() { return hornitzaileak; }
-    public void setHornitzaileak(List<Hornitzailea> hornitzaileak) {
-        this.hornitzaileak = hornitzaileak;
-    }
-
-    public void addHornitzailea(Hornitzailea hornitzailea) {
-        this.hornitzaileak.add(hornitzailea);
-    }
+    public LocalDateTime getAzkenEguneratzea() { return azkenEguneratzea; }
+    public void setAzkenEguneratzea(LocalDateTime azkenEguneratzea) { this.azkenEguneratzea = azkenEguneratzea; }
 
     public boolean erosiBeharDa() {
-        return stock <= gutxienekoStock;
-    }
-
-    public double stockBalioaLortu() {
-        return stock * azkenPrezioa;
+        return kantitatea <= stockMinimoa;
     }
 
     @Override
     public String toString() {
-        return izena + " (Stock: " + stock + ", Prezioa: " + azkenPrezioa + "€)";
+        return izena + " (Stock: " + kantitatea + " " + neurriaUnitatea + ")";
     }
 }

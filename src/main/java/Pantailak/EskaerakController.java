@@ -22,7 +22,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
-
+/*
 public class EskaerakController {
 
     @FXML private TableView<Eskaera> eskaerakTable;
@@ -838,4 +838,4 @@ public class EskaerakController {
         }
     }
 
-}
+}*/

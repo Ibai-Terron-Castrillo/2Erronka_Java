@@ -7,87 +7,43 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OsagaiaService {
-    private static final Gson gsonIn = new GsonBuilder()
-            .setFieldNamingStrategy(field -> {
-                String name = field.getName();
-                if (name.length() > 0) {
-                    return Character.toLowerCase(name.charAt(0)) + name.substring(1);
-                }
-                return name;
-            })
+    private static final Gson gson = new GsonBuilder()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             .create();
-
-    private static final Gson gsonOut = new Gson();
+    private static final DateTimeFormatter dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public static List<Osagaia> getOsagaiak() {
         List<Osagaia> osagaiak = new ArrayList<>();
-
         try {
-            HttpResponse<String> response = ApiClient.get("/api/osagaiak");
-
+            HttpResponse<String> response = ApiClient.get("/api/Inbentarioa");
             if (response.statusCode() == 200) {
-                JsonArray jsonArray = JsonParser.parseString(response.body())
-                        .getAsJsonArray();
-
+                JsonArray jsonArray = JsonParser.parseString(response.body()).getAsJsonArray();
                 for (int i = 0; i < jsonArray.size(); i++) {
                     JsonObject jsonObj = jsonArray.get(i).getAsJsonObject();
-
-                    if (!jsonObj.has("Eskatu") && !jsonObj.has("eskatu")) {
-                        jsonObj.addProperty("Eskatu", false);
-                    }
-
-                    Osagaia osagaia = gsonIn.fromJson(jsonObj, Osagaia.class);
+                    Osagaia osagaia = fromJson(jsonObj);
                     osagaiak.add(osagaia);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return osagaiak;
-    }
-
-    public static List<Osagaia> getOsagaiakStockGutxi() {
-        List<Osagaia> osagaiak = new ArrayList<>();
-
-        try {
-            HttpResponse<String> response = ApiClient.get("/api/osagaiak/stock-gutxi");
-
-            if (response.statusCode() == 200) {
-                JsonArray jsonArray = JsonParser.parseString(response.body())
-                        .getAsJsonArray();
-
-                for (int i = 0; i < jsonArray.size(); i++) {
-                    JsonObject jsonObj = jsonArray.get(i).getAsJsonObject();
-                    Osagaia osagaia = gsonIn.fromJson(jsonObj, Osagaia.class);
-                    osagaiak.add(osagaia);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         return osagaiak;
     }
 
     public static Osagaia getOsagaiaById(int id) {
         try {
-            HttpResponse<String> response = ApiClient.get("/api/osagaiak/" + id);
-
+            HttpResponse<String> response = ApiClient.get("/api/Inbentarioa/" + id);
             if (response.statusCode() == 200) {
-                JsonObject jsonObj = JsonParser.parseString(response.body())
-                        .getAsJsonObject();
-
-                if (!jsonObj.has("Eskatu") && !jsonObj.has("eskatu")) {
-                    jsonObj.addProperty("Eskatu", false);
-                }
-
-                return gsonIn.fromJson(jsonObj, Osagaia.class);
+                JsonObject jsonObj = JsonParser.parseString(response.body()).getAsJsonObject();
+                return fromJson(jsonObj);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -97,9 +53,8 @@ public class OsagaiaService {
 
     public static boolean createOsagaia(Osagaia osagaia) {
         try {
-            String jsonBody = gsonOut.toJson(osagaia);
-            HttpResponse<String> response = ApiClient.post("/api/osagaiak", jsonBody);
-
+            String jsonBody = gson.toJson(toDto(osagaia));
+            HttpResponse<String> response = ApiClient.post("/api/Inbentarioa", jsonBody);
             return response.statusCode() == 200 || response.statusCode() == 201 || response.statusCode() == 204;
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,9 +64,8 @@ public class OsagaiaService {
 
     public static boolean updateOsagaia(Osagaia osagaia) {
         try {
-            String jsonBody = gsonOut.toJson(osagaia);
-            HttpResponse<String> response = ApiClient.put("/api/osagaiak/" + osagaia.getId(), jsonBody);
-
+            String jsonBody = gson.toJson(toDto(osagaia));
+            HttpResponse<String> response = ApiClient.put("/api/Inbentarioa/" + osagaia.getId(), jsonBody);
             return response.statusCode() == 200 || response.statusCode() == 204;
         } catch (Exception e) {
             e.printStackTrace();
@@ -121,7 +75,7 @@ public class OsagaiaService {
 
     public static boolean deleteOsagaia(int id) {
         try {
-            HttpResponse<String> response = ApiClient.delete("/api/osagaiak/" + id);
+            HttpResponse<String> response = ApiClient.delete("/api/Inbentarioa/" + id);
             return response.statusCode() == 200 || response.statusCode() == 204 || response.statusCode() == 202;
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,15 +85,10 @@ public class OsagaiaService {
 
     public static boolean updateStock(int osagaiaId, int kopurua) {
         try {
-            JsonObject requestBody = new JsonObject();
-            requestBody.addProperty("Kopurua", kopurua);
-
-            String jsonBody = gsonOut.toJson(requestBody);
-            HttpResponse<String> response = ApiClient.patch(
-                    "/api/osagaiak/" + osagaiaId + "/stock",
-                    jsonBody
-            );
-
+            JsonObject patch = new JsonObject();
+            patch.addProperty("Kantitatea", kopurua);
+            String jsonBody = gson.toJson(patch);
+            HttpResponse<String> response = ApiClient.patch("/api/Inbentarioa/" + osagaiaId, jsonBody);
             return response.statusCode() == 200 || response.statusCode() == 204;
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,51 +96,42 @@ public class OsagaiaService {
         }
     }
 
-    public static boolean toggleEskatu(int osagaiaId) {
-        try {
-            HttpResponse<String> response = ApiClient.patch(
-                    "/api/osagaiak/" + osagaiaId + "/eskatu",
-                    "{}"
-            );
-
-            return response.statusCode() == 200 || response.statusCode() == 204;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+    // Mapeo funtzioak
+    private static Osagaia fromJson(JsonObject json) {
+        Osagaia o = new Osagaia();
+        if (json.has("id")) o.setId(json.get("id").getAsInt());
+        if (json.has("izena")) o.setIzena(json.get("izena").getAsString());
+        if (json.has("deskribapena") && !json.get("deskribapena").isJsonNull())
+            o.setDeskribapena(json.get("deskribapena").getAsString());
+        if (json.has("kantitatea")) o.setKantitatea(json.get("kantitatea").getAsInt());
+        if (json.has("neurriaUnitatea") && !json.get("neurriaUnitatea").isJsonNull())
+            o.setNeurriaUnitatea(json.get("neurriaUnitatea").getAsString());
+        if (json.has("stockMinimoa")) o.setStockMinimoa(json.get("stockMinimoa").getAsInt());
+        if (json.has("azkenEguneratzea") && !json.get("azkenEguneratzea").isJsonNull()) {
+            String dataStr = json.get("azkenEguneratzea").getAsString();
+            o.setAzkenEguneratzea(LocalDateTime.parse(dataStr, dtf));
         }
+        return o;
     }
 
-    public static List<Osagaia> searchOsagaiak(String searchTerm) {
-        List<Osagaia> osagaiak = new ArrayList<>();
-
-        try {
-            HttpResponse<String> response = ApiClient.get("/api/osagaiak/search/" + searchTerm);
-
-            if (response.statusCode() == 200) {
-                JsonArray jsonArray = JsonParser.parseString(response.body())
-                        .getAsJsonArray();
-
-                for (int i = 0; i < jsonArray.size(); i++) {
-                    JsonObject jsonObj = jsonArray.get(i).getAsJsonObject();
-                    Osagaia osagaia = gsonIn.fromJson(jsonObj, Osagaia.class);
-                    osagaiak.add(osagaia);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return osagaiak;
+    private static InbentarioaDto toDto(Osagaia o) {
+        InbentarioaDto dto = new InbentarioaDto();
+        dto.id = o.getId();
+        dto.izena = o.getIzena();
+        dto.deskribapena = o.getDeskribapena();
+        dto.kantitatea = o.getKantitatea();
+        dto.neurriaUnitatea = o.getNeurriaUnitatea();
+        dto.stockMinimoa = o.getStockMinimoa();
+        // azkenEguneratzea ez da bidaltzen (zerbitzariak kudeatzen du)
+        return dto;
     }
 
-    public static double kalkulatuInbentarioBalioa() {
-        double total = 0;
-        List<Osagaia> osagaiak = getOsagaiak();
-
-        for (Osagaia osagaia : osagaiak) {
-            total += osagaia.stockBalioaLortu();
-        }
-
-        return total;
+    private static class InbentarioaDto {
+        int id;
+        String izena;
+        String deskribapena;
+        int kantitatea;
+        String neurriaUnitatea;
+        int stockMinimoa;
     }
 }

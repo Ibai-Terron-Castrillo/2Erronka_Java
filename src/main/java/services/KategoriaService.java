@@ -23,7 +23,7 @@ public class KategoriaService {
                 System.out.println("INFO: Kategoriak kargatzen...");
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(baseUrl + "/kategoriak"))
+                        .uri(URI.create(baseUrl + "/kategoria"))
                         .GET()
                         .build();
 
@@ -75,7 +75,7 @@ public class KategoriaService {
                 String jsonBody = "{\"izena\":\"" + izena + "\"}";
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(baseUrl + "/kategoriak"))
+                        .uri(URI.create(baseUrl + "/kategoria"))
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                         .build();

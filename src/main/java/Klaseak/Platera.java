@@ -1,28 +1,22 @@
 package Klaseak;
 
 import javafx.beans.property.*;
+import java.time.LocalDateTime;
 
 public class Platera {
     private final IntegerProperty id = new SimpleIntegerProperty();
     private final StringProperty izena = new SimpleStringProperty();
+    private final StringProperty deskribapena = new SimpleStringProperty();
     private final DoubleProperty prezioa = new SimpleDoubleProperty();
-    private final IntegerProperty stock = new SimpleIntegerProperty();
     private final IntegerProperty kategoriaId = new SimpleIntegerProperty();
     private final StringProperty kategoriaIzena = new SimpleStringProperty();
+    private final StringProperty erabilgarri = new SimpleStringProperty(); // "Bai"/"Ez"
+    private final ObjectProperty<LocalDateTime> sortzeData = new SimpleObjectProperty<>();
+    private final StringProperty irudia = new SimpleStringProperty();
 
-    // Constructor
     public Platera() {}
 
-    public Platera(int id, String izena, double prezioa, int stock, int kategoriaId, String kategoriaIzena) {
-        setId(id);
-        setIzena(izena);
-        setPrezioa(prezioa);
-        setStock(stock);
-        setKategoriaId(kategoriaId);
-        setKategoriaIzena(kategoriaIzena);
-    }
-
-    // Getters y Setters
+    // Getters and setters
     public int getId() { return id.get(); }
     public void setId(int value) { id.set(value); }
     public IntegerProperty idProperty() { return id; }
@@ -31,13 +25,13 @@ public class Platera {
     public void setIzena(String value) { izena.set(value); }
     public StringProperty izenaProperty() { return izena; }
 
+    public String getDeskribapena() { return deskribapena.get(); }
+    public void setDeskribapena(String value) { deskribapena.set(value); }
+    public StringProperty deskribapenaProperty() { return deskribapena; }
+
     public double getPrezioa() { return prezioa.get(); }
     public void setPrezioa(double value) { prezioa.set(value); }
     public DoubleProperty prezioaProperty() { return prezioa; }
-
-    public int getStock() { return stock.get(); }
-    public void setStock(int value) { stock.set(value); }
-    public IntegerProperty stockProperty() { return stock; }
 
     public int getKategoriaId() { return kategoriaId.get(); }
     public void setKategoriaId(int value) { kategoriaId.set(value); }
@@ -47,17 +41,20 @@ public class Platera {
     public void setKategoriaIzena(String value) { kategoriaIzena.set(value); }
     public StringProperty kategoriaIzenaProperty() { return kategoriaIzena; }
 
-    public void sincronizarPropiedades() {
-        id.set(id.get());
-        izena.set(izena.get());
-        prezioa.set(prezioa.get());
-        stock.set(stock.get());
-        kategoriaId.set(kategoriaId.get());
-        kategoriaIzena.set(kategoriaIzena.get());
-    }
+    public String getErabilgarri() { return erabilgarri.get(); }
+    public void setErabilgarri(String value) { erabilgarri.set(value); }
+    public StringProperty erabilgarriProperty() { return erabilgarri; }
+
+    public LocalDateTime getSortzeData() { return sortzeData.get(); }
+    public void setSortzeData(LocalDateTime value) { sortzeData.set(value); }
+    public ObjectProperty<LocalDateTime> sortzeDataProperty() { return sortzeData; }
+
+    public String getIrudia() { return irudia.get(); }
+    public void setIrudia(String value) { irudia.set(value); }
+    public StringProperty irudiaProperty() { return irudia; }
 
     @Override
     public String toString() {
-        return getIzena() + " (Stock: " + getStock() + ")";
+        return getIzena() + " (" + getPrezioa() + "€)";
     }
 }
