@@ -20,9 +20,13 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import services.SSLUtil;
+import services.SegurtasunKonfigurazioa;
+import services.ZifratzeTresnak;
 
 public class StageManager {
 
@@ -54,7 +58,7 @@ public class StageManager {
     private static TxatController currentChatController = null; 
     private static List<String> unreadMessages = new ArrayList<>();
     private static List<String> sessionMessages = new ArrayList<>();
-    private static Socket chatSocket = null;
+    private static SSLSocket chatSocket = null;
     private static BufferedReader chatReader = null;
     private static PrintWriter chatWriter = null;
     private static boolean isChatServerConnected = false;
@@ -226,44 +230,53 @@ public class StageManager {
     private static void connectToChatServer() {
         new Thread(() -> {
             try {
-                chatSocket = new Socket("192.168.2.101", 5555);
-                chatReader = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
-                chatWriter = new PrintWriter(chatSocket.getOutputStream(), true);
-                isChatServerConnected = true;
+                // SSL konexioa sortu
+                javax.net.ssl.SSLContext sslContext = SSLUtil.sortuBezeroSSLContext();
+                SSLSocketFactory factory = sslContext.getSocketFactory();
 
-                
-                chatWriter.println(erabiltzaileIzena);
-                System.out.println("DEBUG: Erabiltzailea bidalita: " + erabiltzaileIzena);
+                try (SSLSocket socket = (SSLSocket) factory.createSocket(SegurtasunKonfigurazioa.HOSTA, SegurtasunKonfigurazioa.PORTUA)) {
+                    chatSocket = socket;
+                    chatReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    chatWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                    isChatServerConnected = true;
 
-                
-                loadSessionMessages();
+                    // Erabiltzaile izena bidali (zifratu gabe, protokolo eskaera)
+                    chatWriter.println(erabiltzaileIzena);
+                    System.out.println("DEBUG: Erabiltzailea bidalita (SSL): " + erabiltzaileIzena);
 
-                
-                if (isFirstConnection) {
-                    String welcomeMessage = "SISTEMA: " + erabiltzaileIzena + " konektatu da";
-                    
-                    saveMessageToSession(welcomeMessage);
-                    isFirstConnection = false;
+                    // Sesio mezuak kargatu
+                    loadSessionMessages();
 
-                    
-                    if (currentChatController != null) {
-                        Platform.runLater(() -> {
-                            currentChatController.addStyledMessageToContainer(welcomeMessage);
-                        });
+                    // Ongi etorri mezua
+                    if (isFirstConnection) {
+                        String welcomeMessage = "SISTEMA: " + erabiltzaileIzena + " konektatu da (SSL)";
+                        saveMessageToSession(welcomeMessage);
+                        isFirstConnection = false;
+
+                        if (currentChatController != null) {
+                            Platform.runLater(() -> {
+                                currentChatController.addStyledMessageToContainer(welcomeMessage);
+                            });
+                        }
                     }
+
+                    listenToChatServer();
+
+                    // Konexioa itxi denean
+                    chatSocket = null;
+                    chatReader = null;
+                    chatWriter = null;
+                    isChatServerConnected = false;
                 }
 
-                listenToChatServer();
-
-            } catch (IOException e) {
-                System.err.println("Errorea zerbitzarira konektaztean: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Errorea SSL zerbitzarira konektaztean: " + e.getMessage());
+                e.printStackTrace();
                 isChatServerConnected = false;
 
-                
-                String errorMessage = "SISTEMA: Ezin da zerbitzarira konektatu";
+                String errorMessage = "SISTEMA: Ezin da zerbitzarira konektatu - " + e.getMessage();
                 saveMessageToSession(errorMessage);
 
-                
                 if (currentChatController != null) {
                     Platform.runLater(() -> {
                         currentChatController.addStyledMessageToContainer(errorMessage);
@@ -276,37 +289,34 @@ public class StageManager {
     
     private static void listenToChatServer() {
         try {
-            String message;
+            String rawMessage;
             while (isChatServerConnected && chatSocket != null && chatSocket.isConnected() &&
-                    (message = chatReader.readLine()) != null) {
+                    (rawMessage = chatReader.readLine()) != null) {
 
-                final String finalMessage = message;
-                System.out.println("DEBUG: Mezua jasota: " + finalMessage);
+                System.out.println("DEBUG: Mezu gordina jasota: " + rawMessage);
+
+                // Prozesatu mezua (deszifratu beharrezkoa bada)
+                final String processedMessage = processIncomingMessage(rawMessage);
 
                 Platform.runLater(() -> {
-                    
-                    saveMessageToSession(finalMessage);
+                    saveMessageToSession(processedMessage);
 
-                    
-                    
-                    boolean isSystemMessage = finalMessage.toLowerCase().contains(" sartu da") ||
-                            finalMessage.toLowerCase().contains(" atera egin da") ||
-                            finalMessage.toLowerCase().contains(" konektatu da") ||
-                            finalMessage.toLowerCase().contains(" deskonektatu da");
+                    boolean isSystemMessage = processedMessage.toLowerCase().contains(" sartu da") ||
+                            processedMessage.toLowerCase().contains(" atera egin da") ||
+                            processedMessage.toLowerCase().contains(" konektatu da") ||
+                            processedMessage.toLowerCase().contains(" deskonektatu da") ||
+                            processedMessage.startsWith("[SISTEMA]");
 
-                    
-                    boolean isOwnMessage = finalMessage.startsWith(erabiltzaileIzena + ": ");
+                    boolean isOwnMessage = processedMessage.startsWith(erabiltzaileIzena + ": ");
 
-                    
                     if (!isOwnMessage && !isSystemMessage) {
                         if (chatWindow == null || !chatWindow.isShowing()) {
-                            addUnreadMessage(finalMessage);
+                            addUnreadMessage(processedMessage);
                         }
                     }
 
-                    
                     if (currentChatController != null) {
-                        currentChatController.addStyledMessageToContainer(finalMessage);
+                        currentChatController.addStyledMessageToContainer(processedMessage);
                     }
                 });
             }
@@ -314,6 +324,35 @@ public class StageManager {
             System.err.println("DEBUG: Zerbitzariarekin konexioa itxita: " + e.getMessage());
         } finally {
             isChatServerConnected = false;
+        }
+    }
+
+    /**
+     * Zerbitzaritik jasotako mezua prozesatzen du (deszifratu beharrezkoa bada)
+     * Formatua: "bidaltzailea:mezuZifratua"
+     */
+    private static String processIncomingMessage(String rawMessage) {
+        // Sistema mezuak ez daude zifratuta
+        if (rawMessage.startsWith("[SISTEMA]")) {
+            return rawMessage;
+        }
+
+        // Mezu arrunta: "bidaltzailea: mezua"
+        int separatorIndex = rawMessage.indexOf(':');
+        if (separatorIndex <= 0) {
+            return rawMessage; // Formatu ezezaguna, bueltatu bezala
+        }
+
+        String sender = rawMessage.substring(0, separatorIndex);
+        String encryptedContent = rawMessage.substring(separatorIndex + 1).trim();
+
+        // Deszifratu edukia
+        try {
+            String decryptedContent = ZifratzeTresnak.deszifratu(encryptedContent);
+            return sender + ": " + decryptedContent;
+        } catch (Exception e) {
+            System.err.println("Errorea mezua deszifratzean: " + e.getMessage());
+            return sender + ": [ezin deszifratu] " + encryptedContent;
         }
     }
     private static void disconnectChatServer() {
@@ -335,18 +374,41 @@ public class StageManager {
 
     
 
+    /**
+     * Mezu bat bidaltzen du zerbitzarira, zifratuta
+     */
     public static void sendChatMessage(String message) {
         if (chatWriter != null && isChatServerConnected) {
-            
-            
-            System.out.println("DEBUG: Mezua bidaltzen: " + message);
-            chatWriter.println(message);
+            try {
+                // Mezua zifratu
+                String encryptedMessage = ZifratzeTresnak.zifratu(message);
+                System.out.println("DEBUG: Mezua bidaltzen (zifratuta): " + encryptedMessage);
+                chatWriter.println(encryptedMessage);
+
+                // Bidalitako mezua gorde sesioan (deszifratuta erakusteko)
+                String displayMessage = erabiltzaileIzena + ": " + message;
+                saveMessageToSession(displayMessage);
+
+                if (currentChatController != null) {
+                    Platform.runLater(() -> {
+                        currentChatController.addStyledMessageToContainer(displayMessage);
+                    });
+                }
+            } catch (Exception e) {
+                System.err.println("Errorea mezua zifratzean: " + e.getMessage());
+                String errorMessage = "SISTEMA: Ezin izan da mezua zifratu - " + e.getMessage();
+                saveMessageToSession(errorMessage);
+
+                if (currentChatController != null) {
+                    Platform.runLater(() -> {
+                        currentChatController.addStyledMessageToContainer(errorMessage);
+                    });
+                }
+            }
         } else {
-            
             String errorMessage = message + " (ezin bidali - ez dago konexiorik)";
             saveMessageToSession(errorMessage);
 
-            
             if (currentChatController != null) {
                 Platform.runLater(() -> {
                     currentChatController.addStyledMessageToContainer(errorMessage);

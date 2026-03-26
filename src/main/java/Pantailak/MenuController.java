@@ -26,7 +26,6 @@ public class MenuController {
             try {
                 Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-                // ✅ NUEVO: Ocultar botón flotante al cerrar sesión
                 StageManager.hideFloatingChatButton();
 
                 StageManager.switchToLogin(currentStage);
