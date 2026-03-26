@@ -1,3 +1,4 @@
+// StageManager.java - corrected (with debug prints and robust error handling)
 package Pantailak;
 
 import javafx.animation.*;
@@ -31,24 +32,24 @@ import services.ZifratzeTresnak;
 
 public class StageManager {
 
-    
+
     private static final Image APP_ICON =
             new Image(StageManager.class.getResourceAsStream("/icons/app_icon.png"));
 
-    
+
     private static Image CHAT_ICON = loadChatIcon();
 
     private static final String APP_CSS =
             StageManager.class.getResource("/css/osis-suite.css").toExternalForm();
 
-    
+
     private static final String COLOR_FUEGO = "#F3863A";
     private static final String COLOR_OZEANOA = "#1D505B";
     private static final String COLOR_BEIGE = "#C19A6B";
     private static final String COLOR_ZURIA = "#F5F5F5";
     private static final String COLOR_GORRIA = "#5B1C1C";
 
-    
+
     private static Stage floatingStage = null;
     private static StackPane mainContainer = null;
     private static ImageView chatIconView = null;
@@ -56,7 +57,7 @@ public class StageManager {
     private static Label notificationCount = null;
     private static String erabiltzaileIzena = null;
     private static Stage chatWindow = null;
-    private static TxatController currentChatController = null; 
+    private static TxatController currentChatController = null;
     private static List<String> unreadMessages = new ArrayList<>();
     private static List<String> sessionMessages = new ArrayList<>();
     private static SSLSocket chatSocket = null;
@@ -65,18 +66,16 @@ public class StageManager {
     private static boolean isChatServerConnected = false;
     private static boolean isFirstConnection = true;
 
-    
+
     private static boolean isDragging = false;
     private static double dragStartX, dragStartY;
     private static final double DRAG_THRESHOLD = 5.0;
 
     private StageManager() {}
 
-    
 
     private static Image loadChatIcon() {
         try {
-            
             Image svgIcon = new Image(StageManager.class.getResourceAsStream("/icons/CHAT.svg"));
             if (!svgIcon.isError()) {
                 System.out.println("DEBUG: SVG kargatuta");
@@ -87,7 +86,6 @@ public class StageManager {
         }
 
         try {
-            
             Image pngIcon = new Image(StageManager.class.getResourceAsStream("/icons/chat_icon.png"));
             if (!pngIcon.isError()) {
                 System.out.println("DEBUG: PNG kargatuta");
@@ -97,19 +95,17 @@ public class StageManager {
             System.out.println("DEBUG: Errorea PNG kargatzean: " + e.getMessage());
         }
 
-        
-        System.out.println("DEBUG: Ezin izan da ikonoa kargatu, ez dago eskuragarri, emotikonoa kargatuko da ordezkatzeko.");
+        System.out.println("DEBUG: Ezin izan da ikonoa kargatu, emotikonoa erabiliko da.");
         return null;
     }
 
-    
 
     public static void switchToLogin(Stage currentStage) throws IOException {
         hideFloatingChatButton();
         disconnectChatServer();
         sessionMessages.clear();
         unreadMessages.clear();
-        currentChatController = null; 
+        currentChatController = null;
         isFirstConnection = true;
         switchStage(currentStage, "login-view.fxml", "Saioa Hasi", false);
     }
@@ -174,23 +170,30 @@ public class StageManager {
         return stage;
     }
 
-    
 
     public static void showFloatingChatButton(String username) {
+        System.out.println("DEBUG: showFloatingChatButton called for " + username);
         erabiltzaileIzena = username;
 
         Platform.runLater(() -> {
             try {
                 if (floatingStage != null && floatingStage.isShowing()) {
+                    System.out.println("DEBUG: Button already showing, updating position");
                     updateFloatingButtonPosition();
                     return;
                 }
 
+                System.out.println("DEBUG: Creating floating button...");
                 createFloatingButton();
+                System.out.println("DEBUG: Floating button created, stage: " + floatingStage);
+                if (floatingStage != null) {
+                    System.out.println("DEBUG: Stage showing: " + floatingStage.isShowing());
+                }
                 connectToChatServer();
 
             } catch (Exception e) {
-                System.err.println("Error: " + e.getMessage());
+                System.err.println("ERROR in showFloatingChatButton: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
@@ -199,6 +202,7 @@ public class StageManager {
         Platform.runLater(() -> {
             if (floatingStage != null) {
                 floatingStage.hide();
+                System.out.println("DEBUG: Floating button hidden");
             }
         });
     }
@@ -208,6 +212,7 @@ public class StageManager {
             Platform.runLater(() -> {
                 floatingStage.show();
                 updateFloatingButtonPosition();
+                System.out.println("DEBUG: Floating button shown again");
             });
         }
     }
@@ -226,12 +231,10 @@ public class StageManager {
         }
     }
 
-    
 
     private static void connectToChatServer() {
         new Thread(() -> {
             try {
-                // SSL konexioa sortu
                 javax.net.ssl.SSLContext sslContext = SSLUtil.sortuBezeroSSLContext();
                 SSLSocketFactory factory = sslContext.getSocketFactory();
 
@@ -243,14 +246,11 @@ public class StageManager {
                             new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     isChatServerConnected = true;
 
-                    // Erabiltzaile izena bidali (zifratu gabe, protokolo eskaera)
                     chatWriter.println(erabiltzaileIzena);
                     System.out.println("DEBUG: Erabiltzailea bidalita (SSL): " + erabiltzaileIzena);
 
-                    // Sesio mezuak kargatu
                     loadSessionMessages();
 
-                    // Ongi etorri mezua
                     if (isFirstConnection) {
                         String welcomeMessage = "SISTEMA: " + erabiltzaileIzena + " konektatu da (SSL)";
                         saveMessageToSession(welcomeMessage);
@@ -265,7 +265,6 @@ public class StageManager {
 
                     listenToChatServer();
 
-                    // Konexioa itxi denean
                     chatSocket = null;
                     chatReader = null;
                     chatWriter = null;
@@ -289,7 +288,7 @@ public class StageManager {
         }).start();
     }
 
-    
+
     private static void listenToChatServer() {
         try {
             String rawMessage;
@@ -298,7 +297,6 @@ public class StageManager {
 
                 System.out.println("DEBUG: Mezu gordina jasota: " + rawMessage);
 
-                // Prozesatu mezua (deszifratu beharrezkoa bada)
                 final String processedMessage = processIncomingMessage(rawMessage);
 
                 Platform.runLater(() -> {
@@ -330,26 +328,19 @@ public class StageManager {
         }
     }
 
-    /**
-     * Zerbitzaritik jasotako mezua prozesatzen du (deszifratu beharrezkoa bada)
-     * Formatua: "bidaltzailea:mezuZifratua"
-     */
     private static String processIncomingMessage(String rawMessage) {
-        // Sistema mezuak ez daude zifratuta
         if (rawMessage.startsWith("[SISTEMA]")) {
             return rawMessage;
         }
 
-        // Mezu arrunta: "bidaltzailea: mezua"
         int separatorIndex = rawMessage.indexOf(':');
         if (separatorIndex <= 0) {
-            return rawMessage; // Formatu ezezaguna, bueltatu bezala
+            return rawMessage;
         }
 
         String sender = rawMessage.substring(0, separatorIndex);
         String encryptedContent = rawMessage.substring(separatorIndex + 1).trim();
 
-        // Deszifratu edukia
         try {
             String decryptedContent = ZifratzeTresnak.deszifratu(encryptedContent);
             return sender + ": " + decryptedContent;
@@ -360,37 +351,28 @@ public class StageManager {
             return sender + ": [ezin deszifratu] " + encryptedContent;
         }
     }
+
     private static void disconnectChatServer() {
         isChatServerConnected = false;
         try {
-            if (chatWriter != null && chatSocket != null && chatSocket.isConnected()) {
-                
-                
-            }
             if (chatWriter != null) chatWriter.close();
             if (chatReader != null) chatReader.close();
             if (chatSocket != null) chatSocket.close();
         } catch (IOException e) {
-            
+            // ignore
         }
         saveSessionToFile();
-        currentChatController = null; 
+        currentChatController = null;
     }
 
-    
 
-    /**
-     * Mezu bat bidaltzen du zerbitzarira, zifratuta
-     */
     public static void sendChatMessage(String message) {
         if (chatWriter != null && isChatServerConnected) {
             try {
-                // Mezua zifratu
                 String encryptedMessage = ZifratzeTresnak.zifratu(message);
                 System.out.println("DEBUG: Mezua bidaltzen (zifratuta): " + encryptedMessage);
                 chatWriter.println(encryptedMessage);
 
-                // Bidalitako mezua gorde sesioan (deszifratuta erakusteko)
                 String displayMessage = erabiltzaileIzena + ": " + message;
                 saveMessageToSession(displayMessage);
 
@@ -444,7 +426,6 @@ public class StageManager {
             sessionFile.delete();
         }
 
-        
         if (currentChatController != null) {
             Platform.runLater(() -> {
                 currentChatController.messagesContainer.getChildren().clear();
@@ -453,7 +434,6 @@ public class StageManager {
     }
 
     private static void saveMessageToSession(String message) {
-        
         if (!sessionMessages.isEmpty()) {
             String lastMessage = sessionMessages.get(sessionMessages.size() - 1);
             if (lastMessage.equals(message)) {
@@ -502,11 +482,9 @@ public class StageManager {
         return tempDir + "osis_chat_" + safeUsername + ".session";
     }
 
-    
 
     private static void createFloatingButton() {
         try {
-            
             mainContainer = new StackPane();
             mainContainer.setPickOnBounds(false);
             mainContainer.setStyle("-fx-background-color: transparent;");
@@ -514,7 +492,6 @@ public class StageManager {
             mainContainer.setMaxSize(70, 70);
             mainContainer.setMinSize(70, 70);
 
-            
             StackPane buttonCircle = new StackPane();
             buttonCircle.setStyle(
                     "-fx-background-color: transparent;" +
@@ -530,7 +507,6 @@ public class StageManager {
                             "-fx-max-height: 60;"
             );
 
-            
             if (CHAT_ICON != null && !CHAT_ICON.isError()) {
                 chatIconView = new ImageView(CHAT_ICON);
                 chatIconView.setFitWidth(30);
@@ -555,21 +531,18 @@ public class StageManager {
                 buttonCircle.getChildren().add(fallbackLabel);
             }
 
-            
             StackPane notificationContainer = new StackPane();
             notificationContainer.setStyle("-fx-background-color: transparent;");
             notificationContainer.setPrefSize(24, 24);
             notificationContainer.setMaxSize(24, 24);
             notificationContainer.setMinSize(24, 24);
 
-            
             notificationBadge = new Circle(10);
             notificationBadge.setFill(Color.web(COLOR_GORRIA));
             notificationBadge.setStroke(Color.WHITE);
             notificationBadge.setStrokeWidth(2);
             notificationBadge.setVisible(false);
 
-            
             notificationCount = new Label();
             notificationCount.setStyle(
                     "-fx-text-fill: white;" +
@@ -581,22 +554,16 @@ public class StageManager {
             );
             notificationCount.setVisible(false);
 
-            
             notificationContainer.getChildren().addAll(notificationBadge, notificationCount);
             StackPane.setAlignment(notificationBadge, Pos.CENTER);
             StackPane.setAlignment(notificationCount, Pos.CENTER);
 
-            
             mainContainer.getChildren().addAll(buttonCircle, notificationContainer);
-
-            
             StackPane.setAlignment(notificationContainer, Pos.TOP_RIGHT);
             StackPane.setMargin(notificationContainer, new Insets(-1, -1, 0, 0));
 
-            
             setupMouseEvents(mainContainer, buttonCircle, notificationContainer);
 
-            
             Tooltip tooltip = new Tooltip("Klik: Ireki txata\nArrastratu: Mugitu");
             tooltip.setStyle(
                     "-fx-background-color: " + COLOR_OZEANOA + ";" +
@@ -607,7 +574,6 @@ public class StageManager {
             tooltip.setShowDelay(Duration.millis(300));
             Tooltip.install(mainContainer, tooltip);
 
-            
             floatingStage = new Stage();
             floatingStage.initStyle(StageStyle.TRANSPARENT);
             floatingStage.setAlwaysOnTop(true);
@@ -617,23 +583,19 @@ public class StageManager {
 
             Scene scene = new Scene(mainContainer);
             scene.setFill(null);
-
             floatingStage.setScene(scene);
 
-            
             updateFloatingButtonPosition();
 
-            
             FadeTransition fadeIn = new FadeTransition(Duration.millis(300), mainContainer);
             fadeIn.setFromValue(0);
             fadeIn.setToValue(1);
 
-            
             floatingStage.show();
             fadeIn.play();
 
-            
             updateNotificationBadge();
+            System.out.println("DEBUG: Floating button stage created and shown.");
 
         } catch (Exception e) {
             System.err.println("Errorea botoia sortzean: " + e.getMessage());
@@ -760,7 +722,6 @@ public class StageManager {
         );
     }
 
-    
 
     public static void openChatWindow() {
         Platform.runLater(() -> {
@@ -778,7 +739,7 @@ public class StageManager {
                 Parent root = loader.load();
 
                 TxatController controller = loader.getController();
-                currentChatController = controller; 
+                currentChatController = controller;
 
                 controller.initializeWithData(
                         erabiltzaileIzena,
@@ -802,7 +763,7 @@ public class StageManager {
                 chatWindow.centerOnScreen();
 
                 chatWindow.setOnHiding(e -> {
-                    currentChatController = null; 
+                    currentChatController = null;
                     new Thread(() -> {
                         try {
                             Thread.sleep(100);
@@ -816,7 +777,7 @@ public class StageManager {
                 });
 
                 chatWindow.setOnCloseRequest(e -> {
-                    currentChatController = null; 
+                    currentChatController = null;
                     chatWindow = null;
                 });
 
@@ -831,10 +792,8 @@ public class StageManager {
         });
     }
 
-    
 
     public static void addUnreadMessage(String message) {
-        
         boolean isOwnMessage = message.startsWith(erabiltzaileIzena + ": ");
         boolean isOwnSystemMessage = message.startsWith("SISTEMA: " + erabiltzaileIzena);
 
