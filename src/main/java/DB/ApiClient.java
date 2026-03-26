@@ -6,7 +6,7 @@ import java.time.Duration;
 
 public class ApiClient {
 
-    private static final String BASE_URL = "http://0.0.0.0:5093";
+    private static final String BASE_URL = "http://192.168.10.5:5093";
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();

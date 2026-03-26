@@ -20,6 +20,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.SSLSocket;
@@ -236,8 +237,10 @@ public class StageManager {
 
                 try (SSLSocket socket = (SSLSocket) factory.createSocket(SegurtasunKonfigurazioa.HOSTA, SegurtasunKonfigurazioa.PORTUA)) {
                     chatSocket = socket;
-                    chatReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    chatWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                    chatReader = new BufferedReader(
+                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                    chatWriter = new PrintWriter(
+                            new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     isChatServerConnected = true;
 
                     // Erabiltzaile izena bidali (zifratu gabe, protokolo eskaera)
@@ -351,7 +354,9 @@ public class StageManager {
             String decryptedContent = ZifratzeTresnak.deszifratu(encryptedContent);
             return sender + ": " + decryptedContent;
         } catch (Exception e) {
-            System.err.println("Errorea mezua deszifratzean: " + e.getMessage());
+            System.err.println("Decryption failed for message from " + sender);
+            System.err.println("Raw content: " + encryptedContent);
+            e.printStackTrace();
             return sender + ": [ezin deszifratu] " + encryptedContent;
         }
     }

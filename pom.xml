@@ -165,7 +165,6 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
     <build>
         <resources>
             <resource>
@@ -176,6 +175,7 @@
             </resource>
         </resources>
         <plugins>
+            <!-- Compiler plugin (no assembly config here) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -183,12 +183,38 @@
                 <configuration>
                     <source>23</source>
                     <target>23</target>
-                    <!-- Para evitar advertencias de módulos en Java 23 -->
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
+
+            <!-- Assembly plugin to create fat JAR -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>  <!-- Use a recent version -->
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>Pantailak.Launcher</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JavaFX plugin -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -209,7 +235,7 @@
                 </executions>
             </plugin>
 
-            <!-- Plugin para limpiar dependencias -->
+            <!-- Dependency plugin (optional) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
