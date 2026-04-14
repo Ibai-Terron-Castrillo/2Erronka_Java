@@ -49,6 +49,7 @@ Pantailak\MenuApplication.class
 Pantailak\PlaterakController$1.class
 DB\ApiClient.class
 services\LangileaService$2.class
+Pantailak\LangileakController$1.class
 Pantailak\LoginApplication.class
 services\PlateraService$1.class
 services\PDFSortzailea.class

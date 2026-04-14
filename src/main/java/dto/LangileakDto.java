@@ -8,6 +8,7 @@ public class LangileakDto {
     private String aktibo;           // "Bai" / "Ez"
     private String erregistroData;   // ISO formatuan (DateTime)
     private Integer rolaId;
+    private boolean txatBaimena;     // txat baimena (true/false)
 
     public int getId() {
         return id;
@@ -63,5 +64,13 @@ public class LangileakDto {
 
     public void setRolaId(Integer rolaId) {
         this.rolaId = rolaId;
+    }
+
+    public boolean isTxatBaimena() {
+        return txatBaimena;
+    }
+
+    public void setTxatBaimena(boolean txatBaimena) {
+        this.txatBaimena = txatBaimena;
     }
 }

@@ -31,12 +31,18 @@ public class SessionContext {
         if (currentUser != null && currentUser.getRola() != null) {
             return currentUser.getRola().getIzena();
         }
-        // Bestela, rolaId-tik bilatu (behar izanez gero)
         return null;
     }
 
     // Lagungarria: ID lortzeko
     public static int getCurrentUserId() {
         return currentUser != null ? currentUser.getId() : -1;
+    }
+
+    // Txat baimena egiaztatzeko metodoa
+    public static boolean txatBaimenaDauka() {
+        boolean baimena = currentUser != null && currentUser.getTxat_baimena();
+        System.out.println("DEBUG: txatBaimenaDauka() -> " + baimena + " (currentUser: " + currentUser + ")");
+        return baimena;
     }
 }

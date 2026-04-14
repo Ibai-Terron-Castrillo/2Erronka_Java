@@ -33,8 +33,18 @@ public class LoginController {
             SessionContext.setCurrentUser(loggedUser);
             StageManager.hideFloatingChatButton();
 
+            // DEBUG: erakutsi baimenaren balioa
+            System.out.println("DEBUG: Saioa hasi du " + loggedUser.getErabiltzailea() +
+                    ", txat_baimena = " + loggedUser.getTxat_baimena());
+
             Platform.runLater(() -> {
-                StageManager.showFloatingChatButton(loggedUser.getErabiltzailea()); // izena pasatu
+                // Txat botoia erakutsi baimena badu bakarrik
+                if (SessionContext.txatBaimenaDauka()) {
+                    System.out.println("DEBUG: txatBaimenaDauka() -> true, botoia erakutsiko da.");
+                    StageManager.showFloatingChatButton(loggedUser.getErabiltzailea());
+                } else {
+                    System.out.println("DEBUG: txatBaimenaDauka() -> false, botoia EZ da erakutsiko.");
+                }
                 menuNagusiaIreki();
             });
         } else {
