@@ -3,9 +3,9 @@ package DB;
 import java.sql.*;
 
 public class DBConnection {
-    private static final String URL = "jdbc:mysql://192.168.115.162:3306/erronka1";
-    private static final String USER = "2Taldea";
-    private static final String PASSWORD = "2Taldea2";
+    private static final String URL = "jdbc:mysql://localhost:3306/erronka1";
+    private static final String USER = "root";
+    private static final String PASSWORD = "1MG2024";
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);

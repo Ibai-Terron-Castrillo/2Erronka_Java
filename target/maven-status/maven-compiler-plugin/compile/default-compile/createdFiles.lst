@@ -18,6 +18,7 @@ Pantailak\LangileakController.class
 services\LangileaService$LangileakDto.class
 Pantailak\TxatController.class
 services\HornitzaileaService.class
+DB\ApiClient$SimpleHttpResponse.class
 Klaseak\Erabiltzailea.class
 services\HornitzaileaService$1.class
 Klaseak\Osagaia.class
@@ -42,6 +43,7 @@ services\LangileaService$1.class
 services\LoginService.class
 Pantailak\OsagaiakController.class
 services\MahaiaService$MahaiakDto.class
+DB\ApiClient$1.class
 Kontrola\ErabiltzaileKudeaketa.class
 Pantailak\HornitzaileakApplication.class
 Pantailak\MahaiakController$1.class
@@ -49,7 +51,6 @@ Pantailak\MenuApplication.class
 Pantailak\PlaterakController$1.class
 DB\ApiClient.class
 services\LangileaService$2.class
-Pantailak\LangileakController$1.class
 Pantailak\LoginApplication.class
 services\PlateraService$1.class
 services\PDFSortzailea.class

@@ -54,7 +54,7 @@ public class PDFSortzailea {
     private static final float ANCHO_PAGINA = PDRectangle.A4.getWidth();
     private static final float ALTURA_PAGINA = PDRectangle.A4.getHeight();
 
-    private static final String SERVER_IP = "192.168.10.5";
+    private static final String SERVER_IP = "192.168.1.158";
     private static final String SERVER_SHARE = "C$\\\\PDFak";
 
     public static File sortuEskaeraPdf(Eskaera eskaera, List<EskaeraOsagaia> osagaiak) {

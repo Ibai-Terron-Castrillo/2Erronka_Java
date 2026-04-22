@@ -36,8 +36,6 @@ public class LangileakController {
     private TableColumn<Langilea, String> colErabiltzailea;  // username
     @FXML
     private TableColumn<Langilea, String> colRola;           // rol izena
-    @FXML
-    private TableColumn<Langilea, Boolean> colTxatBaimena;   // txat baimena
 
     @FXML
     private TextField txtIzena;          // izen osoa
@@ -47,8 +45,6 @@ public class LangileakController {
     private PasswordField txtPasahitza;   // password
     @FXML
     private ComboBox<Rolak> comboLanpostu; // rol aukeratzailea
-    @FXML
-    private CheckBox chkTxatBaimena;     // txat baimena checkbox
 
     @FXML
     private Button btnSave, btnCancel;
@@ -81,22 +77,6 @@ public class LangileakController {
         colIzena.setCellValueFactory(new PropertyValueFactory<>("izena"));
         colErabiltzailea.setCellValueFactory(new PropertyValueFactory<>("erabiltzailea"));
         colRola.setCellValueFactory(new PropertyValueFactory<>("rolaIzena"));
-        colTxatBaimena.setCellValueFactory(new PropertyValueFactory<>("txat_baimena"));
-
-        // Txat baimena zutabea formateatu (✓ edo ✗)
-        colTxatBaimena.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Boolean item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item ? "✓" : "✗");
-                    setStyle("-fx-alignment: CENTER; -fx-font-size: 14; -fx-text-fill: " + (item ? "#38a169;" : "#e53e3e;"));
-                }
-            }
-        });
 
         // Rolak kargatu ComboBox-ean
         List<Rolak> rolList = LangileaService.getAllRolak();
@@ -161,7 +141,6 @@ public class LangileakController {
         txtIzena.setText(langilea.getIzena());
         txtErabiltzailea.setText(langilea.getErabiltzailea());
         txtPasahitza.setText(langilea.getPasahitza());
-        chkTxatBaimena.setSelected(langilea.getTxat_baimena());
 
         if (langilea.getRola() != null) {
             comboLanpostu.setValue(langilea.getRola());
@@ -180,7 +159,6 @@ public class LangileakController {
         txtErabiltzailea.clear();
         txtPasahitza.clear();
         comboLanpostu.getSelectionModel().clearSelection();
-        chkTxatBaimena.setSelected(false);
         tableLangileak.getSelectionModel().clearSelection();
     }
 
@@ -215,7 +193,6 @@ public class LangileakController {
         }
         langilea.setRolaId(selectedRol.getId());
         langilea.setRola(selectedRol);
-        langilea.setTxat_baimena(chkTxatBaimena.isSelected());
 
         if (langileaEditatzen == null) {
             Langilea created = LangileaService.create(langilea);

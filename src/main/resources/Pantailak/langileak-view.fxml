@@ -71,15 +71,12 @@
                 <TableView fx:id="tableLangileak"
                            style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 5;">
                     <columns>
-                        <TableColumn fx:id="colId" text="ID" prefWidth="60">
+                        <TableColumn fx:id="colId" text="ID" prefWidth="80">
                             <style><String fx:value="-fx-alignment: CENTER;" /></style>
                         </TableColumn>
-                        <TableColumn fx:id="colIzena" text="Izena" prefWidth="180"/>
-                        <TableColumn fx:id="colErabiltzailea" text="Erabiltzailea" prefWidth="130"/>
-                        <TableColumn fx:id="colRola" text="Rola" prefWidth="120"/>
-                        <TableColumn fx:id="colTxatBaimena" text="Txat" prefWidth="60">
-                            <style><String fx:value="-fx-alignment: CENTER;" /></style>
-                        </TableColumn>
+                        <TableColumn fx:id="colIzena" text="Izena" prefWidth="200"/>
+                        <TableColumn fx:id="colErabiltzailea" text="Erabiltzailea" prefWidth="150"/>
+                        <TableColumn fx:id="colRola" text="Rola" prefWidth="150"/>
                     </columns>
                 </TableView>
             </VBox>
@@ -104,10 +101,6 @@
                     <VBox spacing="5">
                         <Label text="Rola *" style="-fx-font-weight: bold; -fx-text-fill: #4a5568;"/>
                         <ComboBox fx:id="comboLanpostu" style="-fx-background-radius: 5; -fx-padding: 8;"/>
-                    </VBox>
-                    <VBox spacing="5">
-                        <CheckBox fx:id="chkTxatBaimena" text="Txat baimena du"
-                                  style="-fx-font-family: 'Segoe UI'; -fx-font-size: 13; -fx-text-fill: #2d3748;"/>
                     </VBox>
                 </VBox>
 

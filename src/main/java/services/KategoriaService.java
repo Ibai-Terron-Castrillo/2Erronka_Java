@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 public class KategoriaService {
-    private final String baseUrl = "http://192.168.10.5:5093/api";
+    private final String baseUrl = "http://0.0.0.0:5093/api";
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
 

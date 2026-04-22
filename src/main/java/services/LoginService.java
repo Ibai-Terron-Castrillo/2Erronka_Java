@@ -15,19 +15,24 @@ public class LoginService {
 
     public static Langilea login(String erabiltzailea, String pasahitza) {
         try {
+            // Eskakizun JSONa sortu
             LoginRequest req = new LoginRequest(erabiltzailea, pasahitza);
             String json = gson.toJson(req);
 
+            // APIra deia
             var response = ApiClient.post("/api/Langileak/login", json);
 
             if (response.statusCode() == 200) {
+                // Erantzuna LangileakDto gisa deserializatu
                 Type dtoType = new TypeToken<LangileakDto>() {}.getType();
                 LangileakDto dto = gson.fromJson(response.body(), dtoType);
 
+                // Rolak kargatu (guztiak) eta Langilea osatu
                 List<Rolak> rolaks = LangileaService.getAllRolak();
                 Langilea langilea = mapToLangilea(dto, rolaks);
                 return langilea;
             } else {
+                // Errorea: 401 edo bestelakoa
                 System.err.println("Login error: " + response.statusCode() + " - " + response.body());
                 return null;
             }
@@ -37,17 +42,16 @@ public class LoginService {
         }
     }
 
-    // DTOa: txatBaimena eremua gehitu
+    // Barne DTOa (APIak itzultzen duena)
     private static class LangileakDto {
         private int id;
         private String izena;
         private String erabiltzailea;
         private String aktibo;
-        private String erregistroData;
+        private String erregistroData; // ISO formatua
         private Integer rolaId;
-        private boolean txatBaimena;
 
-        // Getters/Setters (gehitu txatBaimena-rena)
+        // Getters/Setters
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
         public String getIzena() { return izena; }
@@ -60,10 +64,9 @@ public class LoginService {
         public void setErregistroData(String erregistroData) { this.erregistroData = erregistroData; }
         public Integer getRolaId() { return rolaId; }
         public void setRolaId(Integer rolaId) { this.rolaId = rolaId; }
-        public boolean isTxatBaimena() { return txatBaimena; }      // Gehitu
-        public void setTxatBaimena(boolean txatBaimena) { this.txatBaimena = txatBaimena; }
     }
 
+    // Barne eskaera klasea
     private static class LoginRequest {
         private String erabiltzailea;
         private String pasahitza;
@@ -74,21 +77,18 @@ public class LoginService {
         }
     }
 
-    // Mapatzean txat_baimena ezarri
+    // DTOtik Langilea objektura mapping (LangileaService-tik kopiatua)
     private static Langilea mapToLangilea(LangileakDto dto, List<Rolak> rolaks) {
         Langilea l = new Langilea();
         l.setId(dto.getId());
         l.setIzena(dto.getIzena());
         l.setErabiltzailea(dto.getErabiltzailea());
-        l.setPasahitza(null);
+        l.setPasahitza(null); // Pasahitza ez dator
         l.setAktibo(dto.getAktibo());
         if (dto.getErregistroData() != null && !dto.getErregistroData().isEmpty()) {
             l.setErregistroData(java.time.LocalDateTime.parse(dto.getErregistroData(), java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         }
         l.setRolaId(dto.getRolaId());
-
-        // GAKOA: txat_baimena ezarri
-        l.setTxat_baimena(dto.isTxatBaimena());
 
         if (dto.getRolaId() != null && rolaks != null) {
             rolaks.stream()

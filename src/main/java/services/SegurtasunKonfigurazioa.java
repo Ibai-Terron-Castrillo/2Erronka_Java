@@ -7,7 +7,7 @@ public final class SegurtasunKonfigurazioa {
     private SegurtasunKonfigurazioa() {}
 
     // Zerbitzariaren konexio datuak
-    public static final String HOSTA = "192.168.10.5";
+    public static final String HOSTA = "localhost";
     public static final int PORTUA = 5555;
 
     // SSL ziurtagiriak (bezeroarentzat truststore bakarrik behar da)

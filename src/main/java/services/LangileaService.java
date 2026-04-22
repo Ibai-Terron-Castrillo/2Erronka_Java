@@ -111,7 +111,6 @@ public class LangileaService {
             l.setErregistroData(LocalDateTime.parse(dto.getErregistroData(), dtf));
         }
         l.setRolaId(dto.getRolaId());
-        l.setTxat_baimena(dto.isTxatBaimena());
 
         if (rolaks != null) {
             rolaks.stream()
@@ -133,7 +132,6 @@ public class LangileaService {
             dto.setErregistroData(l.getErregistroData().format(dtf));
         }
         dto.setRolaId(l.getRolaId());
-        dto.setTxatBaimena(l.getTxat_baimena());
         return dto;
     }
 
@@ -147,7 +145,6 @@ public class LangileaService {
         private String aktibo;
         private String erregistroData;
         private int rolaId;
-        private boolean txatBaimena;
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
@@ -163,8 +160,6 @@ public class LangileaService {
         public void setErregistroData(String erregistroData) { this.erregistroData = erregistroData; }
         public int getRolaId() { return rolaId; }
         public void setRolaId(int rolaId) { this.rolaId = rolaId; }
-        public boolean isTxatBaimena() { return txatBaimena; }
-        public void setTxatBaimena(boolean txatBaimena) { this.txatBaimena = txatBaimena; }
     }
 
     private static class RolakDto {

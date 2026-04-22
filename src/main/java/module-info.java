@@ -1,4 +1,4 @@
-module org.example._erronka_java {
+module org.example.erronka_java {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
@@ -17,12 +17,10 @@ module org.example._erronka_java {
     requires java.desktop;
     requires org.apache.pdfbox;
     requires unirest.java;
-    requires tools.jackson.databind;
+    requires com.fasterxml.jackson.databind;
 
     opens Pantailak to javafx.fxml;
     opens Klaseak to javafx.base, com.google.gson;
-    opens icons;
-    opens css;
     opens services to com.google.gson;
 
     exports Klaseak;

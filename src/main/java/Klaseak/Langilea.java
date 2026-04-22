@@ -11,12 +11,11 @@ public class Langilea {
     private LocalDateTime erregistroData;
     private int rolaId;                  // atzerriko gakoa
     private Rolak rola;                  // erakusteko
-    private boolean txat_baimena;          // txat baimena (true/false)
 
     public Langilea() {}
 
     public Langilea(int id, String izena, String erabiltzailea, String pasahitza,
-                    String aktibo, LocalDateTime erregistroData, int rolaId, boolean txat_baimena) {
+                    String aktibo, LocalDateTime erregistroData, int rolaId) {
         this.id = id;
         this.izena = izena;
         this.erabiltzailea = erabiltzailea;
@@ -24,19 +23,9 @@ public class Langilea {
         this.aktibo = aktibo;
         this.erregistroData = erregistroData;
         this.rolaId = rolaId;
-        this.txat_baimena = txat_baimena;
     }
 
     // Getters / Setters
-
-    public boolean getTxat_baimena() {
-        return txat_baimena;
-    }
-
-    public void setTxat_baimena(boolean txat_baimena) {
-        this.txat_baimena = txat_baimena;
-    }
-
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
