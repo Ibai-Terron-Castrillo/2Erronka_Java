@@ -92,6 +92,34 @@
                                      -fx-padding: 10 14 10 14;"
                                HBox.hgrow="ALWAYS" />
 
+                    <Button fx:id="btnEmoji"
+                            text="😊"
+                            focusTraversable="false"
+                            style="-fx-background-color: white;
+                                  -fx-font-family: 'Segoe UI Emoji';
+                                  -fx-font-size: 16px;
+                                  -fx-text-fill: #1D505B;
+                                  -fx-border-color: #1B345D;
+                                  -fx-border-width: 1;
+                                  -fx-border-radius: 4;
+                                  -fx-background-radius: 4;
+                                  -fx-padding: 8 10 8 10;"
+                            minWidth="42" />
+
+                    <Button fx:id="btnFitxategia"
+                            text="📎"
+                            focusTraversable="false"
+                            style="-fx-background-color: white;
+                                  -fx-font-family: 'Segoe UI Emoji';
+                                  -fx-font-size: 16px;
+                                  -fx-text-fill: #1D505B;
+                                  -fx-border-color: #1B345D;
+                                  -fx-border-width: 1;
+                                  -fx-border-radius: 4;
+                                  -fx-background-radius: 4;
+                                  -fx-padding: 8 10 8 10;"
+                            minWidth="42" />
+
                     <Button fx:id="btnBidali"
                             text="Bidali"
                             defaultButton="true"

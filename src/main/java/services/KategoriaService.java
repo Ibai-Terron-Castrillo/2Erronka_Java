@@ -1,6 +1,7 @@
 package services;
 
 import Klaseak.Kategoria;
+import DB.ApiClient;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.net.URI;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 public class KategoriaService {
-    private final String baseUrl = "http://192.168.10.5:5093/api";
+    private final String baseUrl = ApiClient.getBaseUrl() + "/api";
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
 

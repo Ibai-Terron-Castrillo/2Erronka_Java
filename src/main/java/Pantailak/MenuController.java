@@ -3,15 +3,27 @@ package Pantailak;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import javafx.scene.Node;
+import services.SessionContext;
 
 import java.io.IOException;
 import java.util.Optional;
 
 public class MenuController {
+    @FXML private Button btnTxat;
+
+    @FXML
+    private void initialize() {
+        boolean allowed = SessionContext.txatBaimenaDauka();
+        if (btnTxat != null) {
+            btnTxat.setVisible(allowed);
+            btnTxat.setManaged(allowed);
+        }
+    }
 
     @FXML
     private void saioaItxi(ActionEvent event) {
@@ -136,5 +148,20 @@ public class MenuController {
             erroreaErakutsi("Errorea mahaiak kargatzean: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    private void onTxatClick(ActionEvent event) {
+        if (!SessionContext.txatBaimenaDauka()) {
+            erroreaErakutsi("Ez duzu txata erabiltzeko baimenik.");
+            return;
+        }
+        String username = SessionContext.getCurrentUsername();
+        if (username == null || username.isBlank()) {
+            erroreaErakutsi("Ezin da txata ireki: erabiltzailea ez dago definituta.");
+            return;
+        }
+        StageManager.ensureChatConnected(username);
+        StageManager.openChatWindow();
     }
 }

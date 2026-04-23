@@ -4,6 +4,8 @@ import DB.ApiClient;
 import Klaseak.Langilea;
 import Klaseak.Rolak;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
@@ -23,6 +25,7 @@ public class LoginService {
             if (response.statusCode() == 200) {
                 Type dtoType = new TypeToken<LangileakDto>() {}.getType();
                 LangileakDto dto = gson.fromJson(response.body(), dtoType);
+                dto.setTxatBaimena(extractTxatBaimena(response.body(), dto.isTxatBaimena()));
 
                 List<Rolak> rolaks = LangileaService.getAllRolak();
                 Langilea langilea = mapToLangilea(dto, rolaks);
@@ -34,6 +37,37 @@ public class LoginService {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private static boolean extractTxatBaimena(String jsonBody, boolean fallback) {
+        if (fallback) return true;
+        try {
+            JsonElement parsed = gson.fromJson(jsonBody, JsonElement.class);
+            if (parsed == null || !parsed.isJsonObject()) return fallback;
+            JsonObject obj = parsed.getAsJsonObject();
+
+            JsonElement el = null;
+            if (obj.has("txatBaimena")) el = obj.get("txatBaimena");
+            else if (obj.has("txat_baimena")) el = obj.get("txat_baimena");
+            else if (obj.has("txatBaimenaDauka")) el = obj.get("txatBaimenaDauka");
+
+            if (el == null || el.isJsonNull()) return fallback;
+
+            if (el.isJsonPrimitive()) {
+                var prim = el.getAsJsonPrimitive();
+                if (prim.isBoolean()) return prim.getAsBoolean();
+                if (prim.isNumber()) return prim.getAsInt() != 0;
+                if (prim.isString()) {
+                    String s = prim.getAsString().trim().toLowerCase();
+                    if (s.equals("true") || s.equals("bai") || s.equals("1")) return true;
+                    if (s.equals("false") || s.equals("ez") || s.equals("0")) return false;
+                }
+            }
+
+            return fallback;
+        } catch (Exception e) {
+            return fallback;
         }
     }
 

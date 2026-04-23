@@ -30,7 +30,7 @@ public class LangileakForm {
             editing = langile;
             refreshCallback = onRefresh;
 
-            FXMLLoader loader = new FXMLLoader(LangileakForm.class.getResource("langileak-form.fxml"));
+            FXMLLoader loader = new FXMLLoader(LangileakForm.class.getResource("/Pantailak/langileak-form.fxml"));
             VBox root = loader.load();
 
             Stage stage = new Stage();

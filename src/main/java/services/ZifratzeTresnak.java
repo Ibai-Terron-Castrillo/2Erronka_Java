@@ -48,6 +48,10 @@ public final class ZifratzeTresnak {
      * @return deszifratutako testua
      */
     public static String deszifratu(String testuZifratua) throws Exception {
+        return deszifratuGcm(testuZifratua);
+    }
+
+    private static String deszifratuGcm(String testuZifratua) throws Exception {
         byte[] edukia = Base64.getDecoder().decode(testuZifratua);
         ByteBuffer buffer = ByteBuffer.wrap(edukia);
 

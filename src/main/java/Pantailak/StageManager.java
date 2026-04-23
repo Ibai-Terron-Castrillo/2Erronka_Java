@@ -21,13 +21,26 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import java.io.*;
+import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import services.SSLUtil;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import services.SegurtasunKonfigurazioa;
+import services.SessionContext;
 import services.ZifratzeTresnak;
 
 public class StageManager {
@@ -55,16 +68,25 @@ public class StageManager {
     private static ImageView chatIconView = null;
     private static Circle notificationBadge = null;
     private static Label notificationCount = null;
-    private static String erabiltzaileIzena = null;
+    private static volatile String erabiltzaileIzena = null;
     private static Stage chatWindow = null;
-    private static TxatController currentChatController = null;
-    private static List<String> unreadMessages = new ArrayList<>();
-    private static List<String> sessionMessages = new ArrayList<>();
-    private static SSLSocket chatSocket = null;
-    private static BufferedReader chatReader = null;
-    private static PrintWriter chatWriter = null;
-    private static boolean isChatServerConnected = false;
+    private static volatile TxatController currentChatController = null;
+    private static final List<String> unreadMessages = Collections.synchronizedList(new ArrayList<>());
+    private static final List<String> sessionMessages = Collections.synchronizedList(new ArrayList<>());
+    private static volatile Socket chatSocket = null;
+    private static volatile BufferedReader chatReader = null;
+    private static volatile PrintWriter chatWriter = null;
+    private static final Object CHAT_WRITE_LOCK = new Object();
+    private static volatile boolean isChatServerConnected = false;
+    private static final AtomicBoolean isChatConnecting = new AtomicBoolean(false);
     private static boolean isFirstConnection = true;
+    private static final ExecutorService CHAT_SEND_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setName("chat-send");
+        return t;
+    });
+    private static final Map<String, IncomingFileAssembly> INCOMING_FILES = new ConcurrentHashMap<>();
 
 
     private static boolean isDragging = false;
@@ -72,6 +94,35 @@ public class StageManager {
     private static final double DRAG_THRESHOLD = 5.0;
 
     private StageManager() {}
+
+    private static boolean hasChatPermission() {
+        return SessionContext.txatBaimenaDauka();
+    }
+
+    private static void showNoChatPermissionAlert() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Txata");
+        alert.setHeaderText(null);
+        alert.setContentText("Ez duzu txata erabiltzeko baimenik.");
+        alert.showAndWait();
+    }
+
+    private static URL fxmlUrl(String fxml) {
+        if (fxml == null) return null;
+        URL url = fxml.startsWith("/") ? StageManager.class.getResource(fxml) : StageManager.class.getResource("/Pantailak/" + fxml);
+        if (url != null) return url;
+        String path = fxml.startsWith("/") ? fxml.substring(1) : "Pantailak/" + fxml;
+        url = Thread.currentThread().getContextClassLoader().getResource(path);
+        if (url != null) return url;
+        try {
+            Path p1 = Paths.get("src", "main", "resources").resolve(path);
+            if (Files.exists(p1)) return p1.toUri().toURL();
+            Path p2 = Paths.get("target", "classes").resolve(path);
+            if (Files.exists(p2)) return p2.toUri().toURL();
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
 
 
     private static Image loadChatIcon() {
@@ -113,7 +164,7 @@ public class StageManager {
     public static void switchStage(Stage currentStage, String fxml, String title, boolean maximized)
             throws IOException {
 
-        FXMLLoader loader = new FXMLLoader(StageManager.class.getResource(fxml));
+        FXMLLoader loader = new FXMLLoader(fxmlUrl(fxml));
         Parent root = loader.load();
 
         Stage newStage = new Stage();
@@ -148,7 +199,7 @@ public class StageManager {
     public static Stage openStage(String fxml, String title, boolean maximized, int width, int height)
             throws IOException {
 
-        FXMLLoader loader = new FXMLLoader(StageManager.class.getResource(fxml));
+        FXMLLoader loader = new FXMLLoader(fxmlUrl(fxml));
         Parent root = loader.load();
 
         Stage stage = new Stage();
@@ -173,6 +224,10 @@ public class StageManager {
 
     public static void showFloatingChatButton(String username) {
         System.out.println("DEBUG: showFloatingChatButton called for " + username);
+        if (!hasChatPermission()) {
+            hideFloatingChatButton();
+            return;
+        }
         erabiltzaileIzena = username;
 
         Platform.runLater(() -> {
@@ -198,6 +253,14 @@ public class StageManager {
         });
     }
 
+    public static void ensureChatConnected(String username) {
+        if (!hasChatPermission()) return;
+        if (username == null || username.isBlank()) return;
+        erabiltzaileIzena = username;
+        if (isChatServerConnected) return;
+        connectToChatServer();
+    }
+
     public static void hideFloatingChatButton() {
         Platform.runLater(() -> {
             if (floatingStage != null) {
@@ -208,6 +271,10 @@ public class StageManager {
     }
 
     public static void showFloatingChatButtonIfHidden() {
+        if (!hasChatPermission()) {
+            hideFloatingChatButton();
+            return;
+        }
         if (floatingStage != null && !floatingStage.isShowing()) {
             Platform.runLater(() -> {
                 floatingStage.show();
@@ -233,26 +300,32 @@ public class StageManager {
 
 
     private static void connectToChatServer() {
+        if (isChatServerConnected) return;
+        if (!isChatConnecting.compareAndSet(false, true)) return;
         new Thread(() -> {
             try {
-                javax.net.ssl.SSLContext sslContext = SSLUtil.sortuBezeroSSLContext();
-                SSLSocketFactory factory = sslContext.getSocketFactory();
+                Socket socket = new Socket(SegurtasunKonfigurazioa.HOSTA, SegurtasunKonfigurazioa.PORTUA);
 
-                try (SSLSocket socket = (SSLSocket) factory.createSocket(SegurtasunKonfigurazioa.HOSTA, SegurtasunKonfigurazioa.PORTUA)) {
+                try (socket) {
                     chatSocket = socket;
+                    try {
+                        socket.setKeepAlive(true);
+                    } catch (Exception ignored) {
+                    }
                     chatReader = new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     chatWriter = new PrintWriter(
                             new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     isChatServerConnected = true;
+                    notifyChatConnection(true, "Konektatuta");
 
                     chatWriter.println(erabiltzaileIzena);
-                    System.out.println("DEBUG: Erabiltzailea bidalita (SSL): " + erabiltzaileIzena);
+                    System.out.println("DEBUG: Erabiltzailea bidalita: " + erabiltzaileIzena);
 
                     loadSessionMessages();
 
                     if (isFirstConnection) {
-                        String welcomeMessage = "SISTEMA: " + erabiltzaileIzena + " konektatu da (SSL)";
+                        String welcomeMessage = "SISTEMA: " + erabiltzaileIzena + " konektatu da (TCP)";
                         saveMessageToSession(welcomeMessage);
                         isFirstConnection = false;
 
@@ -269,12 +342,14 @@ public class StageManager {
                     chatReader = null;
                     chatWriter = null;
                     isChatServerConnected = false;
+                    notifyChatConnection(false, "Deskonektatuta");
                 }
 
             } catch (Exception e) {
-                System.err.println("Errorea SSL zerbitzarira konektaztean: " + e.getMessage());
+                System.err.println("Errorea txat zerbitzarira konektaztean: " + e.getMessage());
                 e.printStackTrace();
                 isChatServerConnected = false;
+                notifyChatConnection(false, "Deskonektatuta");
 
                 String errorMessage = "SISTEMA: Ezin da zerbitzarira konektatu - " + e.getMessage();
                 saveMessageToSession(errorMessage);
@@ -285,7 +360,18 @@ public class StageManager {
                     });
                 }
             }
+            finally {
+                isChatConnecting.set(false);
+            }
         }).start();
+    }
+
+    private static void notifyChatConnection(boolean connected, String text) {
+        Platform.runLater(() -> {
+            if (currentChatController != null) {
+                currentChatController.updateConnectionStatus(connected, text);
+            }
+        });
     }
 
 
@@ -297,27 +383,42 @@ public class StageManager {
 
                 System.out.println("DEBUG: Mezu gordina jasota: " + rawMessage);
 
-                final String processedMessage = processIncomingMessage(rawMessage);
+                String processedMessage = processIncomingMessage(rawMessage);
+                if (isFileSentAckSystemMessage(processedMessage)) {
+                    continue;
+                }
+
+                String assembled = tryAssembleIncomingFile(processedMessage);
+                if (assembled == null && isFileChunkMessage(processedMessage)) {
+                    continue;
+                }
+                if (assembled != null) {
+                    processedMessage = assembled;
+                }
+                boolean isOwnMessage = processedMessage.startsWith(erabiltzaileIzena + ": ");
+                if (!isOwnMessage) {
+                    saveMessageToSession(processedMessage);
+                }
+
+                final String uiMessage = processedMessage;
+                final boolean uiIsOwnMessage = isOwnMessage;
 
                 Platform.runLater(() -> {
-                    saveMessageToSession(processedMessage);
+                    boolean isSystemMessage = uiMessage.toLowerCase().contains(" sartu da") ||
+                            uiMessage.toLowerCase().contains(" atera egin da") ||
+                            uiMessage.toLowerCase().contains(" konektatu da") ||
+                            uiMessage.toLowerCase().contains(" deskonektatu da") ||
+                            uiMessage.startsWith("[SISTEMA]") ||
+                            uiMessage.startsWith("SISTEMA:");
 
-                    boolean isSystemMessage = processedMessage.toLowerCase().contains(" sartu da") ||
-                            processedMessage.toLowerCase().contains(" atera egin da") ||
-                            processedMessage.toLowerCase().contains(" konektatu da") ||
-                            processedMessage.toLowerCase().contains(" deskonektatu da") ||
-                            processedMessage.startsWith("[SISTEMA]");
-
-                    boolean isOwnMessage = processedMessage.startsWith(erabiltzaileIzena + ": ");
-
-                    if (!isOwnMessage && !isSystemMessage) {
+                    if (!uiIsOwnMessage && !isSystemMessage) {
                         if (chatWindow == null || !chatWindow.isShowing()) {
-                            addUnreadMessage(processedMessage);
+                            addUnreadMessage(uiMessage);
                         }
                     }
 
-                    if (currentChatController != null) {
-                        currentChatController.addStyledMessageToContainer(processedMessage);
+                    if (!uiIsOwnMessage && currentChatController != null) {
+                        currentChatController.addStyledMessageToContainer(uiMessage);
                     }
                 });
             }
@@ -325,6 +426,7 @@ public class StageManager {
             System.err.println("DEBUG: Zerbitzariarekin konexioa itxita: " + e.getMessage());
         } finally {
             isChatServerConnected = false;
+            notifyChatConnection(false, "Deskonektatuta");
         }
     }
 
@@ -335,10 +437,14 @@ public class StageManager {
 
         int separatorIndex = rawMessage.indexOf(':');
         if (separatorIndex <= 0) {
-            return rawMessage;
+            try {
+                return ZifratzeTresnak.deszifratu(rawMessage.trim());
+            } catch (Exception e) {
+                return rawMessage;
+            }
         }
 
-        String sender = rawMessage.substring(0, separatorIndex);
+        String sender = rawMessage.substring(0, separatorIndex).trim();
         String encryptedContent = rawMessage.substring(separatorIndex + 1).trim();
 
         try {
@@ -349,6 +455,115 @@ public class StageManager {
             System.err.println("Raw content: " + encryptedContent);
             e.printStackTrace();
             return sender + ": [ezin deszifratu] " + encryptedContent;
+        }
+    }
+
+    private static boolean isFileSentAckSystemMessage(String processedMessage) {
+        if (processedMessage == null) return false;
+        String msg = processedMessage.trim();
+        if (!(msg.startsWith("[SISTEMA]") || msg.startsWith("SISTEMA:"))) return false;
+        String lower = msg.toLowerCase();
+        return lower.contains("fitxategia") && lower.contains("bidalita");
+    }
+
+    private static boolean isFileChunkMessage(String processedMessage) {
+        if (processedMessage == null) return false;
+        if (processedMessage.startsWith("FILECHUNK|")) return true;
+        int idx = processedMessage.indexOf(": ");
+        if (idx <= 0) return false;
+        String content = processedMessage.substring(idx + 2);
+        return content.startsWith("FILECHUNK|");
+    }
+
+    private static String tryAssembleIncomingFile(String processedMessage) {
+        if (processedMessage == null) return null;
+        String sender;
+        String content;
+        int idx = processedMessage.indexOf(": ");
+        if (idx > 0) {
+            sender = processedMessage.substring(0, idx).trim();
+            content = processedMessage.substring(idx + 2);
+        } else {
+            sender = "Ezezaguna";
+            content = processedMessage;
+        }
+        if (!content.startsWith("FILECHUNK|")) return null;
+
+        try {
+            String[] parts = content.split("\\|", 7);
+            if (parts.length != 7) return null;
+
+            String fileId = parts[1];
+            String nameEnc = parts[2];
+            String mime = parts[3];
+            int chunkIndex = Integer.parseInt(parts[4]);
+            int totalChunks = Integer.parseInt(parts[5]);
+            String chunkB64 = parts[6];
+
+            String key = sender + "|" + fileId;
+            IncomingFileAssembly assembly = INCOMING_FILES.computeIfAbsent(key, k -> new IncomingFileAssembly(nameEnc, mime, totalChunks));
+            if (assembly.totalChunks != totalChunks) {
+                assembly = new IncomingFileAssembly(nameEnc, mime, totalChunks);
+                INCOMING_FILES.put(key, assembly);
+            }
+
+            byte[] chunk = Base64.getDecoder().decode(chunkB64);
+            String completedFilePayload = assembly.addChunk(chunkIndex, chunk);
+            if (completedFilePayload == null) return null;
+
+            INCOMING_FILES.remove(key);
+            return sender + ": " + completedFilePayload;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static final class IncomingFileAssembly {
+        private final String nameEnc;
+        private final String mime;
+        private final int totalChunks;
+        private final Map<Integer, byte[]> chunksByIndex = new HashMap<>();
+
+        private IncomingFileAssembly(String nameEnc, String mime, int totalChunks) {
+            this.nameEnc = nameEnc;
+            this.mime = mime;
+            this.totalChunks = totalChunks;
+        }
+
+        private synchronized String addChunk(int index, byte[] bytes) throws Exception {
+            if (index < 0) return null;
+            if (chunksByIndex.containsKey(index)) return null;
+            chunksByIndex.put(index, bytes);
+
+            byte[] full = tryAssembleFullBytes(0);
+            if (full == null) {
+                full = tryAssembleFullBytes(1);
+            }
+            if (full == null) return null;
+
+            String decodedName = URLDecoder.decode(nameEnc, StandardCharsets.UTF_8);
+            String safeNameEnc = URLEncoder.encode(decodedName, StandardCharsets.UTF_8);
+            String dataB64 = Base64.getEncoder().encodeToString(full);
+            return "[FILE]|" + safeNameEnc + "|" + mime + "|" + full.length + "|" + dataB64;
+        }
+
+        private byte[] tryAssembleFullBytes(int baseIndex) throws IOException {
+            if (totalChunks <= 0) return null;
+
+            int expectedBytes = 0;
+            for (int i = 0; i < totalChunks; i++) {
+                int keyIndex = baseIndex + i;
+                byte[] chunk = chunksByIndex.get(keyIndex);
+                if (chunk == null) return null;
+                expectedBytes += chunk.length;
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream(expectedBytes);
+            for (int i = 0; i < totalChunks; i++) {
+                int keyIndex = baseIndex + i;
+                out.write(chunksByIndex.get(keyIndex));
+            }
+            return out.toByteArray();
         }
     }
 
@@ -367,41 +582,53 @@ public class StageManager {
 
 
     public static void sendChatMessage(String message) {
-        if (chatWriter != null && isChatServerConnected) {
-            try {
-                String encryptedMessage = ZifratzeTresnak.zifratu(message);
-                System.out.println("DEBUG: Mezua bidaltzen (zifratuta): " + encryptedMessage);
-                chatWriter.println(encryptedMessage);
+        if (message == null) return;
 
-                String displayMessage = erabiltzaileIzena + ": " + message;
-                saveMessageToSession(displayMessage);
+        CHAT_SEND_EXECUTOR.execute(() -> {
+            boolean canSend = chatWriter != null && isChatServerConnected &&
+                    chatSocket != null && chatSocket.isConnected() && !chatSocket.isClosed() && !chatSocket.isOutputShutdown();
+            if (canSend) {
+                try {
+                    String encryptedMessage = ZifratzeTresnak.zifratu(message);
+                    synchronized (CHAT_WRITE_LOCK) {
+                        if (chatWriter != null && isChatServerConnected) {
+                            chatWriter.println(encryptedMessage);
+                            if (chatWriter.checkError()) {
+                                throw new IOException("Socket write failed");
+                            }
+                        }
+                    }
 
-                if (currentChatController != null) {
+                    if (!message.startsWith("FILECHUNK|")) {
+                        String displayMessage = erabiltzaileIzena + ": " + message;
+                        saveMessageToSession(displayMessage);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Errorea mezua bidaltzean: " + e.getMessage());
+                    String errorMessage = "SISTEMA: Ezin izan da mezua bidali - " + e.getMessage();
+                    isChatServerConnected = false;
+                    notifyChatConnection(false, "Deskonektatuta");
+                    ensureChatConnected(erabiltzaileIzena);
+
                     Platform.runLater(() -> {
-                        currentChatController.addStyledMessageToContainer(displayMessage);
+                        if (currentChatController != null) {
+                            currentChatController.addStyledMessageToContainer(errorMessage);
+                        }
                     });
+                    saveMessageToSession(errorMessage);
                 }
-            } catch (Exception e) {
-                System.err.println("Errorea mezua zifratzean: " + e.getMessage());
-                String errorMessage = "SISTEMA: Ezin izan da mezua zifratu - " + e.getMessage();
-                saveMessageToSession(errorMessage);
+            } else {
+                String errorMessage = "SISTEMA: Ezin bidali mezua - ez dago konexiorik";
 
-                if (currentChatController != null) {
-                    Platform.runLater(() -> {
-                        currentChatController.addStyledMessageToContainer(errorMessage);
-                    });
-                }
-            }
-        } else {
-            String errorMessage = message + " (ezin bidali - ez dago konexiorik)";
-            saveMessageToSession(errorMessage);
-
-            if (currentChatController != null) {
                 Platform.runLater(() -> {
-                    currentChatController.addStyledMessageToContainer(errorMessage);
+                    if (currentChatController != null) {
+                        currentChatController.addStyledMessageToContainer(errorMessage);
+                    }
                 });
+                saveMessageToSession(errorMessage);
+                ensureChatConnected(erabiltzaileIzena);
             }
-        }
+        });
     }
 
     public static void sendSystemMessage(String message) {
@@ -416,11 +643,15 @@ public class StageManager {
     }
 
     public static List<String> getSessionMessages() {
-        return new ArrayList<>(sessionMessages);
+        synchronized (sessionMessages) {
+            return new ArrayList<>(sessionMessages);
+        }
     }
 
     public static void clearSessionMessages() {
-        sessionMessages.clear();
+        synchronized (sessionMessages) {
+            sessionMessages.clear();
+        }
         File sessionFile = new File(getSessionFilePath());
         if (sessionFile.exists()) {
             sessionFile.delete();
@@ -434,17 +665,19 @@ public class StageManager {
     }
 
     private static void saveMessageToSession(String message) {
-        if (!sessionMessages.isEmpty()) {
-            String lastMessage = sessionMessages.get(sessionMessages.size() - 1);
-            if (lastMessage.equals(message)) {
-                return;
+        synchronized (sessionMessages) {
+            if (!sessionMessages.isEmpty()) {
+                String lastMessage = sessionMessages.get(sessionMessages.size() - 1);
+                if (lastMessage.equals(message)) {
+                    return;
+                }
             }
+            sessionMessages.add(message);
+            if (sessionMessages.size() > 1000) {
+                sessionMessages.remove(0);
+            }
+            saveSessionToFile();
         }
-        sessionMessages.add(message);
-        if (sessionMessages.size() > 1000) {
-            sessionMessages.remove(0);
-        }
-        saveSessionToFile();
     }
 
     private static void loadSessionMessages() {
@@ -453,9 +686,13 @@ public class StageManager {
             try (BufferedReader reader = new BufferedReader(new FileReader(sessionFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    sessionMessages.add(line);
+                    synchronized (sessionMessages) {
+                        sessionMessages.add(line);
+                    }
                 }
-                System.out.println("DEBUG: " + sessionMessages.size() + " mezu kargatuta sesio fitxategitik");
+                synchronized (sessionMessages) {
+                    System.out.println("DEBUG: " + sessionMessages.size() + " mezu kargatuta sesio fitxategitik");
+                }
             } catch (IOException e) {
                 System.err.println("Errorea sesioko mezuak kargatzean: " + e.getMessage());
             }
@@ -463,14 +700,16 @@ public class StageManager {
     }
 
     private static void saveSessionToFile() {
-        if (!sessionMessages.isEmpty()) {
-            File sessionFile = new File(getSessionFilePath());
-            try (PrintWriter writer = new PrintWriter(new FileWriter(sessionFile))) {
-                for (String message : sessionMessages) {
-                    writer.println(message);
+        synchronized (sessionMessages) {
+            if (!sessionMessages.isEmpty()) {
+                File sessionFile = new File(getSessionFilePath());
+                try (PrintWriter writer = new PrintWriter(new FileWriter(sessionFile))) {
+                    for (String message : sessionMessages) {
+                        writer.println(message);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Errorea mezuak gordetzean: " + e.getMessage());
                 }
-            } catch (IOException e) {
-                System.err.println("Errorea mezuak gordetzean: " + e.getMessage());
             }
         }
     }
@@ -726,6 +965,10 @@ public class StageManager {
     public static void openChatWindow() {
         Platform.runLater(() -> {
             try {
+                if (!hasChatPermission()) {
+                    showNoChatPermissionAlert();
+                    return;
+                }
                 hideFloatingChatButton();
 
                 if (chatWindow != null && chatWindow.isShowing()) {
@@ -735,7 +978,7 @@ public class StageManager {
                     return;
                 }
 
-                FXMLLoader loader = new FXMLLoader(StageManager.class.getResource("txat-view.fxml"));
+                FXMLLoader loader = new FXMLLoader(fxmlUrl("txat-view.fxml"));
                 Parent root = loader.load();
 
                 TxatController controller = loader.getController();
@@ -798,7 +1041,9 @@ public class StageManager {
         boolean isOwnSystemMessage = message.startsWith("SISTEMA: " + erabiltzaileIzena);
 
         if (!isOwnMessage && !isOwnSystemMessage) {
-            unreadMessages.add(message);
+            synchronized (unreadMessages) {
+                unreadMessages.add(message);
+            }
             updateNotificationBadge();
 
             if (chatWindow == null || !chatWindow.isShowing()) {
@@ -808,13 +1053,18 @@ public class StageManager {
     }
 
     public static void markAllMessagesAsRead() {
-        unreadMessages.clear();
+        synchronized (unreadMessages) {
+            unreadMessages.clear();
+        }
         updateNotificationBadge();
     }
 
     private static void updateNotificationBadge() {
         Platform.runLater(() -> {
-            int count = unreadMessages.size();
+            int count;
+            synchronized (unreadMessages) {
+                count = unreadMessages.size();
+            }
             boolean hasNotifications = count > 0;
 
             if (notificationBadge != null && notificationCount != null) {

@@ -2,6 +2,7 @@ package services;
 
 import Klaseak.Hornitzailea;
 import Klaseak.Osagaia;
+import DB.ApiClient;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -17,7 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HornitzaileaService {
-    private static final String API_URL = "http://192.168.10.5:5093/api/Hornitzaileak";
+    private static final String API_URL = ApiClient.getBaseUrl() + "/api/Hornitzaileak";
     private final HttpClient client;
     private final Gson gson;
     private static final Logger LOGGER = Logger.getLogger(HornitzaileaService.class.getName());
