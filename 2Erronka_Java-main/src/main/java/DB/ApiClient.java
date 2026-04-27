@@ -21,7 +21,7 @@ import javax.net.ssl.HostnameVerifier;
 
 public class ApiClient {
 
-    private static final String BASE_URL = "https://localhost:7236";
+    private static final String BASE_URL = "http://192.168.10.5:5093";
 
     static {
         try {
